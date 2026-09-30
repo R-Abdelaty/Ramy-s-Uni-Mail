@@ -1,6 +1,6 @@
 # GUC Mail Viewer
 
-A React and Vite viewer for a personal email archive stored in Cloud Firestore. Google sign-in identifies the visitor; published Firestore security rules decide who can read messages. The source can be public while the inbox stays private.
+A React and Vite viewer for a personal email archive stored in Cloud Firestore. Google sign-in identifies the visitors; published Firestore security rules decide who can read messages. The source can be public while the inbox stays private.
 
 ## Features
 
