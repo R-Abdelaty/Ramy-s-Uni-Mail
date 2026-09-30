@@ -10,10 +10,11 @@ import {
   Search20Regular,
 } from '@fluentui/react-icons'
 import { emailDocument, initials, language, messageColor, senderName } from './mailPresentation.js'
-import { emailVisibilityKeys, isEmailHidden, loadVisibility as loadStoredVisibility, saveVisibility } from './emailVisibility.js'
-import { onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth'
+import { emailVisibilityKeys, isEmailHidden } from './emailVisibility.js'
+import { onAuthStateChanged, signInWithRedirect, signOut } from 'firebase/auth'
 import { firebaseSetupError, getFirebaseServices } from './firebaseClient.js'
 import { loadEmailArchive } from './firebaseEmails.js'
+import { loadFirestoreVisibility, updateFirestoreVisibility } from './firestoreVisibility.js'
 
 function formatDate(value, compact = false) {
   if (!value) return 'Date unavailable'
@@ -93,7 +94,7 @@ export default function App() {
     setAuthError('')
     try {
       const { auth, provider } = getFirebaseServices()
-      await signInWithPopup(auth, provider)
+      await signInWithRedirect(auth, provider)
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Google sign-in failed.')
     } finally {
@@ -140,6 +141,7 @@ export default function App() {
 
   const loadVisibility = useCallback(async () => {
     setVisibilityLoading(true)
+    setVisibilityReady(false)
     setVisibilityError('')
     try {
       if (!user) {
@@ -147,7 +149,7 @@ export default function App() {
         setVisibilityReady(false)
         return
       }
-      setHiddenKeys(loadStoredVisibility(localStorage, user.uid))
+      setHiddenKeys(await loadFirestoreVisibility(getFirebaseServices().db, user.uid, localStorage))
       setVisibilityReady(true)
     } catch (loadError) {
       setVisibilityError(loadError instanceof Error ? loadError.message : 'Saved email visibility could not be loaded.')
@@ -167,9 +169,9 @@ export default function App() {
     try {
       if (!user) throw new Error('Sign in to save email visibility.')
       const updated = new Set(hiddenKeys)
-      if (hidden) updated.add(emailKeys[0])
+      if (hidden) emailKeys.forEach((key) => updated.add(key))
       else emailKeys.forEach((key) => updated.delete(key))
-      saveVisibility(localStorage, user.uid, updated)
+      await updateFirestoreVisibility(getFirebaseServices().db, emailKeys, hidden)
       setHiddenKeys(updated)
       setVisibilityStatus(hidden ? 'Email hidden and saved.' : 'Email shown and saved.')
     } catch (saveError) {

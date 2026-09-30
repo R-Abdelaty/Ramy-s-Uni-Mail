@@ -1,0 +1,22 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /emails/{emailId} {
+      // Only these verified Google accounts can read the email archive.
+      allow read: if request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'tastarram@gmail.com'
+          || request.auth.token.email == 'yemer.4.3.3@gmail.com');
+      allow write: if false;
+    }
+
+    match /userPreferences/{preferenceId} {
+      // The approved accounts share this single preference document.
+      allow read, write: if preferenceId == 'shared'
+        && request.auth != null
+        && request.auth.token.email_verified == true
+        && (request.auth.token.email == 'tastarram@gmail.com'
+          || request.auth.token.email == 'yemer.4.3.3@gmail.com');
+    }
+  }
+}
