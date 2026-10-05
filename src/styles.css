@@ -42,6 +42,7 @@ h1, h2, h3, p { margin: 0; }
 .signed-in-account { max-width: 180px; overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 
 .page-shell { display: flex; flex-direction: column; width: min(1400px, calc(100% - 64px)); height: 100dvh; margin: 0 auto; padding: 24px 0 0; }
+.mail-layout { display: flex; flex: 1; min-height: 0; min-width: 0; }
 .mail-window {
   display: flex;
   flex-direction: column;
@@ -83,11 +84,16 @@ h1, h2, h3, p { margin: 0; }
 .message-item .visibility-toggle { position: absolute; z-index: 1; top: 10px; right: 7px; width: 32px; min-width: 32px; height: 32px; padding: 4px; color: var(--muted); }
 .message-item .message-row { padding-right: 48px; }
 .message-row { position: relative; display: flex; width: 100%; min-height: 96px; align-items: flex-start; gap: 15px; overflow: hidden; padding: 18px 16px 17px 20px; border: 1px solid #ffffff05; border-radius: 15px; color: var(--text); background: linear-gradient(120deg, #2e2e32, #29292d); cursor: pointer; text-align: left; transition: background-color 150ms ease, border-color 150ms ease; }
+.message-open { position: absolute; z-index: 1; inset: 0; width: 100%; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
+.message-row > .sender-avatar, .message-row > .message-summary { position: relative; z-index: 2; pointer-events: none; }
+.message-row .course-code { pointer-events: auto; }
+.message-item .visibility-toggle { z-index: 4; }
 .message-row::before { position: absolute; content: ""; inset: 0 auto 0 0; width: 5px; background: var(--message-color); opacity: .8; }
 .message-row:hover { border-color: #ffffff2b; background: #343338; }
 .message-row.is-selected { border-color: #e8c779b3; background: linear-gradient(110deg, #f0ce8338, #f0ce831a); box-shadow: inset 0 0 0 1px #f0ce8314; }
 .message-row.is-selected::before { background: var(--accent); opacity: 1; }
 .message-row:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.message-row:has(.message-open:focus-visible) { outline: 2px solid var(--accent); outline-offset: -3px; }
 .sender-avatar { display: inline-grid; flex-shrink: 0; width: 45px; height: 45px; place-items: center; border: 1px solid #ffffff38; border-radius: 50%; color: #25272b; background: var(--message-color); font-size: 15px; font-weight: 400; line-height: 1; }
 .message-summary { display: block; min-width: 0; flex: 1; }
 .message-row-top { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 7px; }
@@ -138,8 +144,36 @@ h1, h2, h3, p { margin: 0; }
 .empty-mail-icon svg { width: 30px; height: 30px; }
 .inline-error { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; padding: 10px 16px; border: 1px solid #936861; border-radius: 10px; color: #f5cbc5; background: #3a292b; font-size: 13px; line-height: 1.5; }
 
+.course-code { position: relative; z-index: 3; border-radius: 3px; color: #f0ce83; background: #f0ce8326; box-shadow: inset 0 -1px 0 #f0ce83a0; cursor: help; pointer-events: auto; }
+.course-code:focus-visible { outline: 2px solid #f0ce83; outline-offset: 2px; }
+.course-popover { position: fixed; z-index: 1000; width: max-content; max-width: min(280px, calc(100vw - 16px)); min-height: 36px; padding: 9px 12px; border: 1px solid #ac935a; border-radius: 9px; color: #f3f0f4; background: #343136; box-shadow: 0 10px 32px #000a; font-size: 13px; line-height: 1.3; pointer-events: none; }
+.courses-toggle { position: fixed; z-index: 1102; top: 78px; right: 24px; display: grid; width: 42px; height: 42px; place-items: center; padding: 0; border: 1px solid #626068; border-radius: 12px; background: #252528; box-shadow: 0 6px 20px #09090d55; cursor: pointer; }
+.courses-toggle:hover, .courses-toggle.is-open { border-color: var(--accent); background: #353137; }
+.courses-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.courses-overlay { position: fixed; z-index: 1101; inset: 0; }
+.courses-sidebar { position: absolute; top: 130px; right: 24px; display: flex; flex-direction: column; width: min(440px, calc(100vw - 48px)); height: 30dvh; max-height: calc(100dvh - 154px); min-width: 0; min-height: 0; padding: 12px; border: 1px solid #626068; border-radius: 17px; background: linear-gradient(140deg, #252528, #1c1c1f); box-shadow: 0 18px 60px #09090d99; }
+.courses-heading { display: flex; flex-shrink: 0; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 3px 10px; border-bottom: 1px solid var(--line); }
+.courses-heading h2 { font-size: 17px; font-weight: 600; color: #f2eaf6; }
+.courses-heading p { margin-top: 5px; color: var(--muted); font-size: 12px; }
+.courses-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-width: thin; }
+.courses-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.courses-table th { padding: 13px 3px 8px; color: var(--muted); font-size: 11px; font-weight: 600; text-align: left; }
+.courses-table th:first-child { width: 31%; }
+.courses-table th:last-child { width: 25px; }
+.courses-table td { padding: 4px 2px; vertical-align: top; }
+.courses-table input { width: 100%; min-width: 0; padding: 7px 6px; border: 1px solid #565359; border-radius: 6px; outline: none; color: var(--text); background: #303033; font-size: 11px; }
+.courses-table input:focus { border-color: var(--accent); }
+.course-delete { width: 23px; height: 29px; padding: 0; border: 0; color: var(--muted); background: transparent; cursor: pointer; font-size: 20px; }
+.course-delete:hover { color: #f5cbc5; }
+.courses-empty { padding: 20px 5px; color: var(--muted); font-size: 12px; }
+.courses-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; justify-content: space-between; gap: 7px; padding-top: 8px; border-top: 1px solid var(--line); }
+.courses-actions > div { display: flex; gap: 5px; }
+.courses-status { padding: 8px 3px 0; color: var(--muted); font-size: 11px; line-height: 1.4; }
+.courses-status.is-error { color: #f5cbc5; }
+.courses-state { padding: 20px 5px; }
+
 @media (max-width: 1024px) {
-  .page-shell { width: calc(100% - 36px); padding-top: 18px; }
+  .page-shell { width: calc(100% - 36px); margin: 0 auto; padding-top: 18px; }
   .mail-workspace { grid-template-columns: minmax(300px, 42%) minmax(0, 1fr); }
   .message-row { gap: 11px; padding: 15px 12px 15px 16px; }
   .message-row .sender-avatar { width: 38px; height: 38px; font-size: 13px; }
@@ -152,6 +186,8 @@ h1, h2, h3, p { margin: 0; }
 
 @media (max-width: 768px) {
   .page-shell { width: calc(100% - 20px); padding: 10px 0 0; }
+  .mail-layout { display: flex; }
+  .courses-toggle, .courses-overlay { display: none; }
   .mail-window { padding: 0 7px; border-radius: 22px 22px 0 0; }
   .window-toolbar { min-height: 38px; gap: 8px; padding: 0 7px; }
   .toolbar-actions { gap: 0; }

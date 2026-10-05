@@ -39,6 +39,8 @@ export function emailDocument(email) {
     :lang(ar){font-family:"Cairo","Lato",sans-serif!important;line-height:1.95}
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
     a{color:#f0ce83!important;text-decoration:underline}blockquote{border-inline-start:2px solid #5c5860;padding-inline-start:16px;margin-inline:0}
+    .course-code{color:#f0ce83!important;background:#f0ce8326!important;box-shadow:inset 0 -1px 0 #f0ce83a0;border-radius:3px;cursor:help}
+    .course-code:focus-visible{outline:2px solid #f0ce83;outline-offset:2px}
     ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#555158;border-radius:6px}
   </style></head><body dir="auto">${email.html_body}</body></html>`
 }

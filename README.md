@@ -7,6 +7,7 @@ A React and Vite viewer for a personal email archive stored in Cloud Firestore. 
 - Search and read archived messages, with a refresh button for new imports.
 - Display email HTML in a sandboxed frame that blocks scripts and external email resources.
 - Save hide/show preferences in one shared Firestore document, so they stay the same across both approved Google accounts, devices, and sessions. Existing browser-local preferences are migrated on the next sign-in.
+- Open the shared course-code table with the desktop book button. Its floating panel keeps the mail layout centered. Saved names sync through `userPreferences/shared` and appear when hovering, focusing, or tapping a highlighted code in the inbox or a message. The editor is hidden on mobile, where saved popovers remain available.
 
 ## Run locally
 

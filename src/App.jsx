@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Spinner } from '@fluentui/react-components'
+import { createPortal } from 'react-dom'
 import {
   ArrowLeft20Regular,
   ArrowSync20Regular,
@@ -15,6 +16,59 @@ import { onAuthStateChanged, signInWithRedirect, signOut } from 'firebase/auth'
 import { firebaseSetupError, getFirebaseServices } from './firebaseClient.js'
 import { loadEmailArchive } from './firebaseEmails.js'
 import { loadFirestoreVisibility, updateFirestoreVisibility } from './firestoreVisibility.js'
+import { matchCourses, validateCourseRows } from './courseMappings.js'
+import { saveCourses, subscribeCourses } from './firestoreCourses.js'
+import { annotateCourseDocument } from './annotateCourses.js'
+import courseBookIcon from './assets/course-book.svg'
+
+function CourseText({ value, mappings, onShow, onHide }) {
+  if (typeof value !== 'string') return value
+  const matches = matchCourses(value, mappings)
+  if (!matches.length) return value
+  const parts = []
+  let cursor = 0
+  for (const match of matches) {
+    if (match.start > cursor) parts.push(value.slice(cursor, match.start))
+    parts.push(<span className="course-code" role="button" tabIndex={0} key={`${match.start}-${match.code}`}
+      aria-label={`${match.code}: ${match.name}`}
+      onMouseEnter={(event) => onShow(match.code, event.currentTarget)}
+      onMouseLeave={onHide}
+      onFocus={(event) => onShow(match.code, event.currentTarget)}
+      onBlur={onHide}
+      onClick={(event) => { event.stopPropagation(); onShow(match.code, event.currentTarget) }}
+      onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onShow(match.code, event.currentTarget) } }}>
+      {match.text}
+    </span>)
+    cursor = match.end
+  }
+  if (cursor < value.length) parts.push(value.slice(cursor))
+  return parts
+}
+
+function CourseTable({ rows, onRows, onSave, onCancel, onReload, onClose, loading, saving, dirty, error, conflict, status }) {
+  const change = (index, field, value) => onRows(rows.map((row, rowIndex) => rowIndex === index ? { ...row, [field]: value } : row))
+  return <aside id="course-names-panel" className="courses-sidebar" role="dialog" aria-labelledby="course-names-title" onClick={(event) => event.stopPropagation()}>
+    <div className="courses-heading"><div><h2 id="course-names-title">Course names</h2><p>Edit the names shown in emails.</p></div>
+      <Button autoFocus appearance="subtle" size="small" icon={<Dismiss16Regular />} aria-label="Close course names" onClick={onClose} />
+    </div>
+    {loading ? <div className="courses-state" role="status"><Spinner size="small" label="Loading courses" /></div> : <>
+      <div className="courses-scroll"><table className="courses-table"><thead><tr><th>Course code</th><th>Subject name</th><th><span className="sr-only">Delete</span></th></tr></thead>
+        <tbody>{rows.map((row, index) => <tr key={row.id}>
+          <td><input aria-label={`Course code row ${index + 1}`} value={row.code} onChange={(event) => change(index, 'code', event.target.value)} /></td>
+          <td><input aria-label={`Subject name row ${index + 1}`} value={row.name} onChange={(event) => change(index, 'name', event.target.value)} /></td>
+          <td><button type="button" className="course-delete" aria-label={`Delete course row ${index + 1}`} title="Delete row" onClick={() => onRows(rows.filter((_, rowIndex) => rowIndex !== index))}>×</button></td>
+        </tr>)}</tbody></table>
+        {rows.length === 0 && <p className="courses-empty">No courses saved. Add a row to begin.</p>}
+      </div>
+      <div className="courses-actions">
+        <Button appearance="subtle" size="small" onClick={() => onRows([...rows, { id: crypto.randomUUID(), code: '', name: '' }])}>Add row</Button>
+        <div><Button appearance="subtle" size="small" disabled={!dirty || saving} onClick={onCancel}>Cancel</Button><Button appearance="primary" size="small" disabled={!dirty || saving} onClick={onSave}>{saving ? 'Saving…' : 'Save'}</Button></div>
+      </div>
+      {(error || status) && <p className={`courses-status${error ? ' is-error' : ''}`} role={error ? 'alert' : 'status'}>{error || status}</p>}
+      {conflict && <Button appearance="secondary" size="small" onClick={onReload}>Reload saved table</Button>}
+    </>}
+  </aside>
+}
 
 function formatDate(value, compact = false) {
   if (!value) return 'Date unavailable'
@@ -63,9 +117,136 @@ export default function App() {
   const [visibilityError, setVisibilityError] = useState('')
   const [savingKey, setSavingKey] = useState('')
   const [visibilityStatus, setVisibilityStatus] = useState('')
+  const [courseMappings, setCourseMappings] = useState({})
+  const [courseRows, setCourseRows] = useState([])
+  const [courseRevision, setCourseRevision] = useState(0)
+  const [courseDraftRevision, setCourseDraftRevision] = useState(0)
+  const [coursesLoading, setCoursesLoading] = useState(true)
+  const [coursesSaving, setCoursesSaving] = useState(false)
+  const [coursesDirty, setCoursesDirty] = useState(false)
+  const [coursesError, setCoursesError] = useState('')
+  const [coursesConflict, setCoursesConflict] = useState(false)
+  const [coursesStatus, setCoursesStatus] = useState('')
+  const [coursePopover, setCoursePopover] = useState(null)
+  const [coursesOpen, setCoursesOpen] = useState(false)
+  const coursesButtonRef = useRef(null)
+  const courseDraftDirtyRef = useRef(false)
+  const frameRef = useRef(null)
+  const frameCleanupRef = useRef(null)
   const readingTitleRef = useRef(null)
   const inboxRef = useRef(null)
   const searchRef = useRef(null)
+
+  const rowsFromMappings = useCallback((mappings) => Object.entries(mappings).map(([code, name]) => ({ id: crypto.randomUUID(), code, name })), [])
+
+  const closeCourses = useCallback(() => {
+    setCoursesOpen(false)
+    coursesButtonRef.current?.focus({ preventScroll: true })
+  }, [])
+
+  useEffect(() => {
+    if (!coursesOpen) return undefined
+    const escape = (event) => { if (event.key === 'Escape') { event.preventDefault(); closeCourses() } }
+    const resize = () => { if (window.innerWidth <= 768) setCoursesOpen(false) }
+    document.addEventListener('keydown', escape)
+    window.addEventListener('resize', resize)
+    return () => { document.removeEventListener('keydown', escape); window.removeEventListener('resize', resize) }
+  }, [coursesOpen, closeCourses])
+
+  useEffect(() => {
+    if (!user) {
+      setCourseMappings({})
+      setCourseRows([])
+      setCoursePopover(null)
+      setCoursesOpen(false)
+      setCoursesLoading(false)
+      courseDraftDirtyRef.current = false
+      return undefined
+    }
+    setCoursesLoading(true)
+    setCoursesError('')
+    const unsubscribe = subscribeCourses(getFirebaseServices().db, (mappings, revision) => {
+      setCourseMappings(mappings)
+      setCourseRevision(revision)
+      if (!courseDraftDirtyRef.current) {
+        setCourseRows(rowsFromMappings(mappings))
+        setCourseDraftRevision(revision)
+      }
+      setCoursesLoading(false)
+    }, (loadError) => {
+      setCoursesError(loadError instanceof Error ? loadError.message : 'Course names could not be loaded.')
+      setCoursesLoading(false)
+    })
+    return () => unsubscribe()
+  }, [user, rowsFromMappings])
+
+  function editCourseRows(rows) {
+    setCourseRows(rows)
+    setCoursesDirty(true)
+    courseDraftDirtyRef.current = true
+    setCoursesError('')
+    setCoursesStatus('Unsaved changes')
+  }
+
+  function resetCourseRows() {
+    setCourseRows(rowsFromMappings(courseMappings))
+    setCourseDraftRevision(courseRevision)
+    setCoursesDirty(false)
+    courseDraftDirtyRef.current = false
+    setCoursesError('')
+    setCoursesConflict(false)
+    setCoursesStatus('')
+  }
+
+  async function saveCourseRows() {
+    setCoursesError('')
+    setCoursesConflict(false)
+    let mappings
+    try { mappings = validateCourseRows(courseRows) } catch (error) { setCoursesError(error.message); return }
+    setCoursesSaving(true)
+    setCoursesStatus('Saving courses…')
+    try {
+      const revision = await saveCourses(getFirebaseServices().db, mappings, courseDraftRevision)
+      courseDraftDirtyRef.current = false
+      setCoursesDirty(false)
+      setCourseRows(rowsFromMappings(mappings))
+      setCourseDraftRevision(revision)
+      setCourseMappings(mappings)
+      setCoursesStatus('Courses saved across devices.')
+    } catch (saveError) {
+      setCoursesError(saveError instanceof Error ? saveError.message : 'Courses could not be saved.')
+      setCoursesConflict(saveError?.code === 'course-conflict')
+      setCoursesStatus('')
+    } finally { setCoursesSaving(false) }
+  }
+
+  const hideCoursePopover = useCallback(() => setCoursePopover(null), [])
+  const showCoursePopover = useCallback((code, target, frame = null) => {
+    const rect = target.getBoundingClientRect()
+    const frameRect = frame?.getBoundingClientRect()
+    setCoursePopover({ code, rect: {
+      left: rect.left + (frameRect?.left || 0),
+      right: rect.right + (frameRect?.left || 0),
+      top: rect.top + (frameRect?.top || 0),
+      bottom: rect.bottom + (frameRect?.top || 0),
+    } })
+  }, [])
+
+  useEffect(() => {
+    if (!coursePopover) return undefined
+    const dismiss = (event) => { if (!event.target.closest?.('.course-code, .course-popover')) hideCoursePopover() }
+    const escape = (event) => { if (event.key === 'Escape') hideCoursePopover() }
+    document.addEventListener('pointerdown', dismiss, true)
+    document.addEventListener('keydown', escape)
+    window.addEventListener('scroll', hideCoursePopover, true)
+    window.addEventListener('resize', hideCoursePopover)
+    return () => {
+      document.removeEventListener('pointerdown', dismiss, true)
+      document.removeEventListener('keydown', escape)
+      window.removeEventListener('scroll', hideCoursePopover, true)
+      window.removeEventListener('resize', hideCoursePopover)
+    }
+  }, [coursePopover, hideCoursePopover])
 
   useEffect(() => {
     if (firebaseSetupError) {
@@ -195,6 +376,49 @@ export default function App() {
   const selectedDocument = useMemo(() => selectedEmail?.html_body ? emailDocument(selectedEmail) : '', [selectedEmail])
 
   useEffect(() => {
+    const frame = frameRef.current
+    const document = frame?.contentDocument
+    if (!document?.body) return
+    const scrollTop = document.scrollingElement?.scrollTop || 0
+    annotateCourseDocument(document, courseMappings)
+    if (document.scrollingElement) document.scrollingElement.scrollTop = scrollTop
+  }, [courseMappings, selectedDocument])
+
+  function setupCourseFrame(event) {
+    frameCleanupRef.current?.()
+    const frame = event.currentTarget
+    const document = frame.contentDocument
+    if (!document?.body) return
+    annotateCourseDocument(document, courseMappings)
+    const marker = (target) => target?.closest?.('.course-code')
+    const mouseOver = (event) => { const found = marker(event.target); if (found) showCoursePopover(found.dataset.courseCode, found, frame) }
+    const mouseOut = (event) => { const found = marker(event.target); if (found && !found.contains(event.relatedTarget)) hideCoursePopover() }
+    const focusIn = (event) => { const found = marker(event.target); if (found) showCoursePopover(found.dataset.courseCode, found, frame) }
+    const focusOut = (event) => { if (marker(event.target)) hideCoursePopover() }
+    const click = (event) => { const found = marker(event.target); if (found) { event.preventDefault(); event.stopPropagation(); showCoursePopover(found.dataset.courseCode, found, frame) } else hideCoursePopover() }
+    const keyDown = (event) => { const found = marker(event.target); if (found && (event.key === 'Enter' || event.key === ' ')) { event.preventDefault(); showCoursePopover(found.dataset.courseCode, found, frame) } else if (event.key === 'Escape') hideCoursePopover() }
+    document.addEventListener('mouseover', mouseOver)
+    document.addEventListener('mouseout', mouseOut)
+    document.addEventListener('focusin', focusIn)
+    document.addEventListener('focusout', focusOut)
+    document.addEventListener('click', click)
+    document.addEventListener('keydown', keyDown)
+    document.addEventListener('scroll', hideCoursePopover, true)
+    frameCleanupRef.current = () => {
+      document.removeEventListener('mouseover', mouseOver)
+      document.removeEventListener('mouseout', mouseOut)
+      document.removeEventListener('focusin', focusIn)
+      document.removeEventListener('focusout', focusOut)
+      document.removeEventListener('click', click)
+      document.removeEventListener('keydown', keyDown)
+      document.removeEventListener('scroll', hideCoursePopover, true)
+    }
+  }
+
+  useEffect(() => { hideCoursePopover() }, [selectedIndex, readerOpen, query, hideCoursePopover])
+  useEffect(() => () => frameCleanupRef.current?.(), [])
+
+  useEffect(() => {
     if (readerOpen) readingTitleRef.current?.focus({ preventScroll: true })
   }, [readerOpen, selectedEmail])
 
@@ -205,7 +429,7 @@ export default function App() {
   function backToInbox() {
     setReaderOpen(false)
     requestAnimationFrame(() => {
-      const selectedRow = inboxRef.current?.querySelector('.message-row[aria-pressed="true"]')
+      const selectedRow = inboxRef.current?.querySelector('.message-open[aria-pressed="true"]')
       if (selectedRow) selectedRow.focus()
       else searchRef.current?.focus()
     })
@@ -228,6 +452,7 @@ export default function App() {
 
   return (
     <main className="page-shell">
+      <div className="mail-layout">
       <div className="mail-window">
         <header className="window-toolbar">
           <div className="toolbar-actions">
@@ -304,21 +529,22 @@ export default function App() {
               <ul className="message-list" aria-label="Latest messages">
                 {visibleEmails.map(({ email, index }) => (
                   <li className="message-item" key={emailVisibilityKeys(email)[0]}>
-                    <button type="button" className={`message-row${index === selected?.index ? ' is-selected' : ''}${isEmailHidden(email, hiddenKeys) ? ' is-hidden' : ''}`}
-                      style={{ '--message-color': messageColor(email) }} aria-pressed={index === selected?.index}
-                      aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Hidden email: ' : ''}${email.title || 'Untitled message'}`}
-                      onClick={() => { setSelectedIndex(index); setReaderOpen(true) }}>
+                    <div className={`message-row${index === selected?.index ? ' is-selected' : ''}${isEmailHidden(email, hiddenKeys) ? ' is-hidden' : ''}`}
+                      style={{ '--message-color': messageColor(email) }}>
+                      <button type="button" className="message-open" aria-pressed={index === selected?.index}
+                        aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Hidden email: ' : ''}${email.title || 'Untitled message'}`}
+                        onClick={() => { setSelectedIndex(index); setReaderOpen(true) }} />
                       <Avatar email={email} />
                       <span className="message-summary">
                         <span className="message-row-top">
-                          <span className="message-subject" dir="auto" lang={language(email.title)}>{email.title || 'Untitled message'}</span>
+                          <span className="message-subject" dir="auto" lang={language(email.title)}><CourseText value={email.title || 'Untitled message'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
                           <span className="message-date" title={formatDate(email.date)}>{formatDate(email.date, true)}</span>
                         </span>
                         <span className="message-preview" dir="auto" lang={language(email.preview || email.body)}>
-                          {email.preview || email.body || 'Open to read this message.'}
+                          <CourseText value={email.preview || email.body || 'Open to read this message.'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} />
                         </span>
                       </span>
-                    </button>
+                    </div>
                     <Button className="visibility-toggle" appearance="subtle" size="small"
                       icon={isEmailHidden(email, hiddenKeys) ? <Eye20Regular /> : <EyeOff20Regular />}
                       title={isEmailHidden(email, hiddenKeys) ? 'Show email' : 'Hide email'}
@@ -350,15 +576,15 @@ export default function App() {
                 </div>
                 <header className="reading-header">
                   <h2 ref={readingTitleRef} tabIndex={-1} className="reading-title" dir="auto" lang={language(selectedEmail.title)}>
-                    {selectedEmail.title || 'Untitled message'}
+                    <CourseText value={selectedEmail.title || 'Untitled message'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} />
                   </h2>
                   <div className="reading-sender">
                     <Avatar email={selectedEmail} />
                     {(senderName(selectedEmail) || (typeof selectedEmail.to === 'string' && selectedEmail.to.trim())) && (
                       <div className="sender-details">
-                        {senderName(selectedEmail) && <span dir="auto" lang={language(senderName(selectedEmail))}>{senderName(selectedEmail)}</span>}
+                        {senderName(selectedEmail) && <span dir="auto" lang={language(senderName(selectedEmail))}><CourseText value={senderName(selectedEmail)} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>}
                         {typeof selectedEmail.to === 'string' && selectedEmail.to.trim() && (
-                          <span className="recipient-detail">to {selectedEmail.to}</span>
+                          <span className="recipient-detail">to <CourseText value={selectedEmail.to} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
                         )}
                       </div>
                     )}
@@ -368,10 +594,10 @@ export default function App() {
                 <section className="body-section" aria-label="Full email body" key={`${selectedEmail.date || ''}-${selected.index}`}>
                   {selectedDocument ? (
                     <iframe className="mail-body-frame" title={selectedEmail.title || 'Email content'}
-                      sandbox="" referrerPolicy="no-referrer" srcDoc={selectedDocument} />
+                      ref={frameRef} sandbox="allow-same-origin" referrerPolicy="no-referrer" srcDoc={selectedDocument} onLoad={setupCourseFrame} />
                   ) : (
                     <div className="plain-body-scroll">
-                      <pre className="mail-body" dir="auto" lang={language(selectedEmail.body)}>{selectedEmail.body || 'This message has no body.'}</pre>
+                      <pre className="mail-body" dir="auto" lang={language(selectedEmail.body)}><CourseText value={selectedEmail.body || 'This message has no body.'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></pre>
                     </div>
                   )}
                 </section>
@@ -386,6 +612,21 @@ export default function App() {
           </article>
         </section>
       </div>
+      </div>
+      <button ref={coursesButtonRef} type="button" className={`courses-toggle${coursesOpen ? ' is-open' : ''}`}
+        aria-label="Course names" title="Course names" aria-expanded={coursesOpen} aria-controls="course-names-panel"
+        onClick={() => { hideCoursePopover(); setCoursesOpen((open) => !open) }}>
+        <img src={courseBookIcon} width="24" height="24" alt="" aria-hidden="true" />
+      </button>
+      {coursesOpen && <div className="courses-overlay" onClick={closeCourses}>
+        <CourseTable rows={courseRows} onRows={editCourseRows} onSave={saveCourseRows} onCancel={resetCourseRows} onReload={resetCourseRows} onClose={closeCourses}
+          loading={coursesLoading} saving={coursesSaving} dirty={coursesDirty} error={coursesError} conflict={coursesConflict} status={coursesStatus} />
+      </div>}
+      {coursePopover && courseMappings[coursePopover.code] && createPortal(<div className="course-popover" role="tooltip" style={{
+        left: Math.max(8, Math.min(window.innerWidth - Math.min(280, window.innerWidth - 16) - 8, (coursePopover.rect.left + coursePopover.rect.right) / 2 - 140)),
+        top: coursePopover.rect.top >= 72 ? coursePopover.rect.top - 8 : coursePopover.rect.bottom + 8,
+        transform: coursePopover.rect.top >= 72 ? 'translateY(-100%)' : undefined,
+      }}>{courseMappings[coursePopover.code]}</div>, document.body)}
     </main>
   )
 }
