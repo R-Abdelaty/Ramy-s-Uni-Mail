@@ -1,7 +1,7 @@
 // Only the requested font providers can load remotely; email resources stay blocked.
 const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src data: https://fonts.gstatic.com; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
 const FONT_URL = 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&display=swap'
-const MESSAGE_COLORS = ['#1E50A2', '#895B8A']
+const MESSAGE_COLORS = ['#895B8A']
 
 export function senderName(email) {
   for (const value of [email.sender_name, email.sender, email.from]) {
@@ -38,9 +38,9 @@ export function emailDocument(email) {
     body{font-size:16px;line-height:1.8;overflow-wrap:anywhere;padding:4px 5px 24px 0}
     :lang(ar){font-family:"Cairo","Lato",sans-serif!important;line-height:1.95}
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
-    a{color:#1E50A2!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #F09199;padding-inline-start:16px;margin-inline:0}
+    a{color:#895B8A!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #F09199;padding-inline-start:16px;margin-inline:0}
     .course-code{color:#36363B!important;background:#F09199!important;border-radius:4px;cursor:help}
-    .course-code:focus-visible{outline:2px solid #1E50A2;outline-offset:2px}
+    .course-code:focus-visible{outline:2px solid #895B8A;outline-offset:2px}
     ::selection{color:#EAF4FC!important;background:#895B8A!important}
     ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#895B8A;border-radius:6px}
   </style></head><body dir="auto">${email.html_body}</body></html>`
