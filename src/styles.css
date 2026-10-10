@@ -263,3 +263,8 @@ h1, h2, h3, p { margin: 0; }
 
 .reading-panel button:hover:not(:disabled) { color: var(--moon-white); background: var(--ancient-purple); }
 .reading-panel button:hover:not(:disabled) .fui-Button__icon { color: var(--moon-white); }
+
+.search-highlight { border-radius: 3px; outline: 1px solid var(--ancient-purple); color: var(--ink); background: var(--peach-pink); -webkit-box-decoration-break: clone; box-decoration-break: clone; pointer-events: none; }
+.message-row.is-hidden.is-search-result { height: auto; min-height: 84px; align-items: flex-start; opacity: .8; }
+.message-row.is-hidden.is-search-result .message-subject { white-space: normal; }
+.message-row.is-hidden.is-search-result .message-preview { display: -webkit-box; margin-top: 7px; }

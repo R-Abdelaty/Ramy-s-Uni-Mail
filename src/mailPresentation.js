@@ -40,6 +40,7 @@ export function emailDocument(email) {
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
     a{color:#895B8A!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #F09199;padding-inline-start:16px;margin-inline:0}
     .course-code{color:#36363B!important;background:#F09199!important;border-radius:4px;cursor:help}
+    .search-highlight{color:#36363B!important;background:#F09199!important;outline:1px solid #895B8A;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;pointer-events:none}
     .course-code:focus-visible{outline:2px solid #895B8A;outline-offset:2px}
     ::selection{color:#EAF4FC!important;background:#895B8A!important}
     ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#895B8A;border-radius:6px}

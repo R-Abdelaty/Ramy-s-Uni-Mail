@@ -20,15 +20,17 @@ import { matchCourses, validateCourseRows } from './courseMappings.js'
 import { saveCourses, subscribeCourses } from './firestoreCourses.js'
 import { annotateCourseDocument } from './annotateCourses.js'
 import courseBookIcon from './assets/course-book.svg'
+import { buildSearchIndex, searchEmails, parseSearchTerms, highlightSearchDocument } from './mailSearch.js'
+import SearchText from './SearchText.jsx'
 
-function CourseText({ value, mappings, onShow, onHide }) {
+function CourseText({ value, mappings, onShow, onHide, searchTerms = [] }) {
   if (typeof value !== 'string') return value
   const matches = matchCourses(value, mappings)
-  if (!matches.length) return value
+  if (!matches.length) return <SearchText value={value} terms={searchTerms} />
   const parts = []
   let cursor = 0
   for (const match of matches) {
-    if (match.start > cursor) parts.push(value.slice(cursor, match.start))
+    if (match.start > cursor) parts.push(<SearchText key={`text-${cursor}`} value={value.slice(cursor, match.start)} terms={searchTerms} />)
     parts.push(<span className="course-code" role="button" tabIndex={0} key={`${match.start}-${match.code}`}
       aria-label={`${match.code}: ${match.name}`}
       onMouseEnter={(event) => onShow(match.code, event.currentTarget)}
@@ -37,11 +39,11 @@ function CourseText({ value, mappings, onShow, onHide }) {
       onBlur={onHide}
       onClick={(event) => { event.stopPropagation(); onShow(match.code, event.currentTarget) }}
       onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); onShow(match.code, event.currentTarget) } }}>
-      {match.text}
+      <SearchText value={match.text} terms={searchTerms} />
     </span>)
     cursor = match.end
   }
-  if (cursor < value.length) parts.push(value.slice(cursor))
+  if (cursor < value.length) parts.push(<SearchText key={`text-${cursor}`} value={value.slice(cursor)} terms={searchTerms} />)
   return parts
 }
 
@@ -352,12 +354,9 @@ export default function App() {
 
   const visibilityDisabled = !user || !visibilityReady || visibilityLoading || Boolean(savingKey)
 
-  const visibleEmails = useMemo(() => {
-    const term = query.trim().toLocaleLowerCase()
-    return emails.map((email, index) => ({ email, index })).filter(({ email }) =>
-      !term || [email.title, email.preview, senderName(email), email.body]
-        .filter((value) => typeof value === 'string').join(' ').toLocaleLowerCase().includes(term))
-  }, [emails, query])
+  const searchTerms = useMemo(() => parseSearchTerms(query, courseMappings), [query, courseMappings])
+  const searchIndex = useMemo(() => buildSearchIndex(emails), [emails])
+  const visibleEmails = useMemo(() => searchEmails(searchIndex, searchTerms), [searchIndex, searchTerms])
   const selected = visibleEmails.find(({ index }) => index === selectedIndex) || visibleEmails[0]
   const selectedEmail = selected?.email
   const selectedDocument = useMemo(() => selectedEmail?.html_body ? emailDocument(selectedEmail) : '', [selectedEmail])
@@ -368,8 +367,21 @@ export default function App() {
     if (!document?.body) return
     const scrollTop = document.scrollingElement?.scrollTop || 0
     annotateCourseDocument(document, courseMappings)
+    highlightSearchDocument(document, searchTerms)
     if (document.scrollingElement) document.scrollingElement.scrollTop = scrollTop
-  }, [courseMappings, selectedDocument])
+    revealFrameMatch(document)
+  }, [courseMappings, selectedDocument, searchTerms])
+
+  useEffect(() => {
+    const container = document.querySelector('.plain-body-scroll')
+    const marker = container?.querySelector('.search-highlight')
+    if (marker) container.scrollTop += marker.getBoundingClientRect().top - container.getBoundingClientRect().top - 32
+  }, [selectedEmail, searchTerms, readerOpen])
+
+  function revealFrameMatch(document) {
+    const marker = document.querySelector('.search-highlight')
+    if (marker && document.scrollingElement) document.scrollingElement.scrollTop += marker.getBoundingClientRect().top - 32
+  }
 
   function setupCourseFrame(event) {
     frameCleanupRef.current?.()
@@ -377,6 +389,8 @@ export default function App() {
     const document = frame.contentDocument
     if (!document?.body) return
     annotateCourseDocument(document, courseMappings)
+    highlightSearchDocument(document, searchTerms)
+    revealFrameMatch(document)
     const marker = (target) => target?.closest?.('.course-code')
     const mouseOver = (event) => { const found = marker(event.target); if (found) showCoursePopover(found.dataset.courseCode, found, frame) }
     const mouseOut = (event) => { const found = marker(event.target); if (found && !found.contains(event.relatedTarget)) hideCoursePopover() }
@@ -511,9 +525,9 @@ export default function App() {
               </div>
             ) : (
               <ul className="message-list" aria-label="Latest messages">
-                {visibleEmails.map(({ email, index }) => (
+                {visibleEmails.map(({ email, index, snippet }) => (
                   <li className="message-item" key={emailVisibilityKeys(email)[0]}>
-                    <div className={`message-row${index === selected?.index ? ' is-selected' : ''}${isEmailHidden(email, hiddenKeys) ? ' is-hidden' : ''}`}
+                    <div className={`message-row${index === selected?.index ? ' is-selected' : ''}${isEmailHidden(email, hiddenKeys) ? ' is-hidden' : ''}${searchTerms.length ? ' is-search-result' : ''}`}
                       style={{ '--message-color': messageColor(email) }}>
                       <button type="button" className="message-open" aria-pressed={index === selected?.index}
                         aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Hidden email: ' : ''}${email.title || 'Untitled message'}`}
@@ -521,11 +535,11 @@ export default function App() {
                       <Avatar email={email} />
                       <span className="message-summary">
                         <span className="message-row-top">
-                          <span className="message-subject" dir="auto" lang={language(email.title)}><CourseText value={email.title || 'Untitled message'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
+                          <span className="message-subject" dir="auto" lang={language(email.title)}><CourseText value={email.title || 'Untitled message'} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
                           <span className="message-date" title={formatDate(email.date)}>{formatDate(email.date, true)}</span>
                         </span>
-                        <span className="message-preview" dir="auto" lang={language(email.preview || email.body)}>
-                          <CourseText value={email.preview || email.body || 'Open to read this message.'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} />
+                        <span className="message-preview" dir="auto" lang={language(snippet)}>
+                          <CourseText value={snippet} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} />
                         </span>
                       </span>
                     </div>
@@ -559,15 +573,15 @@ export default function App() {
                 </div>
                 <header className="reading-header">
                   <h2 ref={readingTitleRef} tabIndex={-1} className="reading-title" dir="auto" lang={language(selectedEmail.title)}>
-                    <CourseText value={selectedEmail.title || 'Untitled message'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} />
+                    <CourseText value={selectedEmail.title || 'Untitled message'} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} />
                   </h2>
                   <div className="reading-sender">
                     <Avatar email={selectedEmail} />
                     {(senderName(selectedEmail) || (typeof selectedEmail.to === 'string' && selectedEmail.to.trim())) && (
                       <div className="sender-details">
-                        {senderName(selectedEmail) && <span dir="auto" lang={language(senderName(selectedEmail))}><CourseText value={senderName(selectedEmail)} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>}
+                        {senderName(selectedEmail) && <span dir="auto" lang={language(senderName(selectedEmail))}><CourseText value={senderName(selectedEmail)} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>}
                         {typeof selectedEmail.to === 'string' && selectedEmail.to.trim() && (
-                          <span className="recipient-detail">to <CourseText value={selectedEmail.to} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
+                          <span className="recipient-detail">to <CourseText value={selectedEmail.to} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
                         )}
                       </div>
                     )}
@@ -580,7 +594,7 @@ export default function App() {
                       ref={frameRef} sandbox="allow-same-origin" referrerPolicy="no-referrer" srcDoc={selectedDocument} onLoad={setupCourseFrame} />
                   ) : (
                     <div className="plain-body-scroll">
-                      <pre className="mail-body" dir="auto" lang={language(selectedEmail.body)}><CourseText value={selectedEmail.body || 'This message has no body.'} mappings={courseMappings} onShow={showCoursePopover} onHide={hideCoursePopover} /></pre>
+                      <pre className="mail-body" dir="auto" lang={language(selectedEmail.body)}><CourseText value={selectedEmail.body || 'This message has no body.'} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></pre>
                     </div>
                   )}
                 </section>
