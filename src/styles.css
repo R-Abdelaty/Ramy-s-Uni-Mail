@@ -220,8 +220,8 @@ h1, h2, h3, p { margin: 0; }
   .search-field { height: 40px; background: transparent; }
   .inbox-heading { padding-top: 16px; }
   .message-list { padding-right: 10px; padding-left: 10px; }
-  .message-list li + li { border-top: 1px solid rgb(54 54 59 / 30%); }
-  .message-row { gap: 12px; min-height: 94px; padding: 16px 13px 15px 17px; }
+  .message-row { gap: 12px; min-height: 94px; padding: 16px 13px 15px 17px; border-color: rgb(137 91 138 / 22%); border-radius: 14px; background: rgb(234 244 252 / 35%); }
+  .message-row:not(.is-selected):hover { background: rgb(234 244 252 / 35%); }
   .message-row .sender-avatar { width: 41px; height: 41px; font-size: 14px; }
   .message-subject { font-size: 14px; font-weight: 750; }
   .message-row.is-hidden .message-subject { font-weight: 500; }
