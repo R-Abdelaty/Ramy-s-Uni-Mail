@@ -200,7 +200,7 @@ h1, h2, h3, p { margin: 0; }
 }
 
 @media (min-width: 769px) {
-  .inbox-panel { border-top-right-radius: 0; }
+  .inbox-panel { border-top-right-radius: 0; border-right-color: var(--ancient-purple); }
   .reading-panel { border-top-left-radius: 0; border-left: 0; }
 }
 
