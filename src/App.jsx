@@ -551,10 +551,10 @@ export default function App() {
                   <div className="reader-message-actions">
                     <Button appearance="subtle" size="small" className="reader-visibility-toggle"
                       icon={isEmailHidden(selectedEmail, hiddenKeys) ? <Eye20Regular /> : <EyeOff20Regular />}
+                      aria-label={savingKey === emailVisibilityKeys(selectedEmail)[0] ? 'Saving…' : isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
+                      title={isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
                       aria-pressed={isEmailHidden(selectedEmail, hiddenKeys)} disabled={visibilityDisabled}
-                      onClick={() => toggleVisibility(selectedEmail)}>
-                      {savingKey === emailVisibilityKeys(selectedEmail)[0] ? 'Saving…' : isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
-                    </Button>
+                      onClick={() => toggleVisibility(selectedEmail)} />
                   </div>
                 </div>
                 <header className="reading-header">
