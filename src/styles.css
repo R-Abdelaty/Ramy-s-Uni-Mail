@@ -204,30 +204,33 @@ h1, h2, h3, p { margin: 0; }
   .page-shell { width: calc(100% - 20px); padding: 10px 0 0; }
   .mail-layout { display: flex; }
   .courses-toggle, .courses-overlay { display: none; }
-  .mail-window { padding: 0 7px; border-radius: 22px 22px 0 0; }
-  .window-toolbar { min-height: 38px; gap: 8px; padding: 0 7px; }
-  .toolbar-actions { gap: 8px; }
-  .snapshot-time { font-size: 10px; }
-    .toolbar-actions .refresh-button { font-size: 11px; }
+  .mail-window { --panel-fill: rgb(234 244 252 / 80%); position: relative; padding: 0; border: 0; border-radius: 0; background: transparent; font-weight: 500; }
+  .window-toolbar { position: absolute; z-index: 5; top: 8px; right: 13px; left: 13px; min-height: 36px; gap: 8px; padding: 0; }
+  .toolbar-actions { gap: 8px; padding: 0; background: transparent; }
+  .snapshot-time { font-size: 11px; font-weight: 550; }
+  .toolbar-actions .refresh-button { font-size: 11px; }
   .mail-workspace { display: flex; }
-  .inbox-panel, .reading-panel { flex: 1; border-radius: 15px 15px 0 0; }
+  .inbox-panel, .reading-panel { flex: 1; border-radius: 22px 22px 0 0; }
   .reading-panel { display: none; }
   .reader-is-open .inbox-panel { display: none; }
   .reader-is-open .reading-panel { display: flex; }
-  .inbox-header { padding: 23px 13px 0; }
-  .brand-title { margin-bottom: 20px; font-size: clamp(18px, 5vw, 23px); }
-  .search-field { height: 40px; }
+  .inbox-header { padding: 56px 13px 0; }
+  .brand-title { margin-bottom: 20px; font-size: clamp(18px, 5vw, 23px); font-weight: 500; }
+  .brand-title span { font-weight: 500; }
+  .search-field { height: 40px; background: transparent; }
   .inbox-heading { padding-top: 16px; }
-  .message-list { padding-right: 7px; padding-left: 7px; }
+  .message-list { padding-right: 10px; padding-left: 10px; }
+  .message-list li + li { border-top: 1px solid rgb(54 54 59 / 30%); }
   .message-row { gap: 12px; min-height: 94px; padding: 16px 13px 15px 17px; }
   .message-row .sender-avatar { width: 41px; height: 41px; font-size: 14px; }
-  .message-subject { font-size: 14px; }
-  .message-preview { font-size: 13px; }
-  .message-date { font-size: 11px; }
-  .reading-panel { padding: 8px 18px 10px; }
+  .message-subject { font-size: 14px; font-weight: 750; }
+  .message-row.is-hidden .message-subject { font-weight: 500; }
+  .message-preview { font-size: 13px; font-weight: 500; }
+  .message-date { font-size: 11px; font-weight: 550; }
+  .reading-panel { padding: 52px 18px 10px; }
   .reader-toolbar { justify-content: space-between; min-height: 32px; margin-bottom: 10px; }
   .reader-toolbar .back-button { display: inline-flex; margin-left: -10px; }
-  .reading-title { margin-bottom: 12px; font-size: 16px; line-height: 1.4; }
+  .reading-title { margin-bottom: 12px; font-size: 16px; font-weight: 650; line-height: 1.4; }
   .reading-header { padding-bottom: 12px; }
   .reading-sender { flex-wrap: wrap; column-gap: 12px; row-gap: 10px; }
   .reading-sender .sender-avatar { width: 32px; height: 32px; font-size: 12px; }

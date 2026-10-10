@@ -383,11 +383,22 @@ export default function App() {
     if (marker && document.scrollingElement) document.scrollingElement.scrollTop += marker.getBoundingClientRect().top - 32
   }
 
+  useEffect(() => {
+    const syncFrameWeight = () => {
+      const frame = frameRef.current
+      const root = frame?.contentDocument?.documentElement
+      if (root) root.style.fontWeight = window.getComputedStyle(frame).fontWeight
+    }
+    window.addEventListener('resize', syncFrameWeight)
+    return () => window.removeEventListener('resize', syncFrameWeight)
+  }, [])
+
   function setupCourseFrame(event) {
     frameCleanupRef.current?.()
     const frame = event.currentTarget
     const document = frame.contentDocument
     if (!document?.body) return
+    document.documentElement.style.fontWeight = window.getComputedStyle(frame).fontWeight
     annotateCourseDocument(document, courseMappings)
     highlightSearchDocument(document, searchTerms)
     revealFrameMatch(document)
