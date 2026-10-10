@@ -1,46 +1,59 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { FluentProvider, webDarkTheme } from '@fluentui/react-components'
+import { FluentProvider, webLightTheme } from '@fluentui/react-components'
 import App from './App.jsx'
 import './styles.css'
 
+const MailBackground = React.lazy(() => import('./assets/mail-background.js'))
+
 const mailTheme = {
-  ...webDarkTheme,
+  ...webLightTheme,
   fontFamilyBase: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Cairo", sans-serif',
-  colorBrandBackground: '#eeebd3',
-  colorBrandBackgroundHover: '#f6f3e3',
-  colorBrandBackgroundPressed: '#d6d3b9',
-  colorBrandForeground1: '#ddbd7c',
-  colorBrandForeground2: '#ddbd7c',
-  colorBrandForegroundLink: '#ddbd7c',
-  colorBrandStroke1: '#ddbd7c',
-  colorCompoundBrandStroke: '#ddbd7c',
-  colorNeutralForegroundOnBrand: '#173d42',
-  colorNeutralForeground1: '#eeebd3',
-  colorNeutralForeground1Hover: '#eeebd3',
-  colorNeutralForeground1Pressed: '#eeebd3',
-  colorNeutralForeground2: '#b1c7c5',
-  colorNeutralForeground2Hover: '#eeebd3',
-  colorNeutralForeground2Pressed: '#eeebd3',
-  colorNeutralForeground2BrandHover: '#ddbd7c',
-  colorNeutralForeground2BrandPressed: '#ddbd7c',
-  colorNeutralForegroundDisabled: '#819d9b',
-  colorNeutralBackground1: '#183b40',
-  colorNeutralBackground1Hover: '#244c51',
-  colorNeutralBackground1Pressed: '#255957',
-  colorNeutralBackgroundDisabled: '#24474a',
-  colorSubtleBackgroundHover: '#eeebd30f',
-  colorSubtleBackgroundPressed: '#eeebd31a',
-  colorNeutralStroke1: '#eeebd340',
-  colorNeutralStroke1Hover: '#eeebd366',
-  colorNeutralStrokeDisabled: '#eeebd326',
-  colorStrokeFocus2: '#ddbd7c',
+  colorBrandBackground: '#1E50A2',
+  colorBrandBackgroundHover: '#895B8A',
+  colorBrandBackgroundPressed: '#1E50A2',
+  colorBrandForeground1: '#1E50A2',
+  colorBrandForeground2: '#895B8A',
+  colorBrandForegroundLink: '#1E50A2',
+  colorBrandStroke1: '#1E50A2',
+  colorCompoundBrandStroke: '#1E50A2',
+  colorNeutralForegroundOnBrand: '#EAF4FC',
+  colorNeutralForeground1: '#1E50A2',
+  colorNeutralForeground1Hover: '#1E50A2',
+  colorNeutralForeground1Pressed: '#1E50A2',
+  colorNeutralForeground2: '#1E50A2',
+  colorNeutralForeground2Hover: '#895B8A',
+  colorNeutralForeground2Pressed: '#1E50A2',
+  colorNeutralForeground2BrandHover: '#895B8A',
+  colorNeutralForeground2BrandPressed: '#1E50A2',
+  colorNeutralForegroundDisabled: '#895B8A',
+  colorNeutralBackground1: '#EAF4FC',
+  colorNeutralBackground1Hover: '#EAF4FC',
+  colorNeutralBackground1Pressed: '#EAF4FC',
+  colorNeutralBackgroundDisabled: '#EAF4FC',
+  colorSubtleBackgroundHover: '#EAF4FC',
+  colorSubtleBackgroundPressed: '#EAF4FC',
+  colorNeutralStroke1: '#895B8A',
+  colorNeutralStroke1Hover: '#1E50A2',
+  colorNeutralStrokeDisabled: '#895B8A',
+  colorStrokeFocus2: '#1E50A2',
+  shadow2: 'none',
+  shadow4: 'none',
+  shadow8: 'none',
+  shadow16: 'none',
+  shadow28: 'none',
+  shadow64: 'none',
   borderRadiusMedium: '12px',
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <FluentProvider theme={mailTheme} className="app-provider">
+      <div className="ambient-background" aria-hidden="true">
+        <React.Suspense fallback={null}>
+          <MailBackground style={{ width: '100%', height: '100%', aspectRatio: 'auto' }} />
+        </React.Suspense>
+      </div>
       <App />
     </FluentProvider>
   </React.StrictMode>,

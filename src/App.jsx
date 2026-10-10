@@ -12,7 +12,7 @@ import {
 } from '@fluentui/react-icons'
 import { emailDocument, initials, language, messageColor, senderName } from './mailPresentation.js'
 import { emailVisibilityKeys, isEmailHidden } from './emailVisibility.js'
-import { onAuthStateChanged, signInWithRedirect, signOut } from 'firebase/auth'
+import { onAuthStateChanged, signInWithRedirect } from 'firebase/auth'
 import { firebaseSetupError, getFirebaseServices } from './firebaseClient.js'
 import { loadEmailArchive } from './firebaseEmails.js'
 import { loadFirestoreVisibility, updateFirestoreVisibility } from './firestoreVisibility.js'
@@ -283,19 +283,6 @@ export default function App() {
     }
   }
 
-  async function handleSignOut() {
-    setAuthBusy(true)
-    try {
-      await signOut(getFirebaseServices().auth)
-      setEmails([])
-      setSavedAt('')
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Sign-out failed.')
-    } finally {
-      setAuthBusy(false)
-    }
-  }
-
   const loadSnapshot = useCallback(async ({ quiet = false } = {}) => {
     if (!user) {
       setEmails([])
@@ -456,15 +443,12 @@ export default function App() {
       <div className="mail-window">
         <header className="window-toolbar">
           <div className="toolbar-actions">
-            <span className="signed-in-account" title={user.email || ''}>{user.email}</span>
-            <Button appearance="subtle" onClick={handleSignOut} disabled={authBusy}>Sign out</Button>
             <span className="snapshot-time" title={savedAt ? formatDate(savedAt) : undefined}>
-              {savedAt ? `Updated ${formatDate(savedAt)}` : 'Firestore archive'}
+              {savedAt ? `Updated ${formatDate(savedAt)}` : 'Not updated yet'}
             </span>
             <Button appearance="subtle" icon={<ArrowSync20Regular />} className="refresh-button"
-              onClick={() => loadSnapshot({ quiet: true })} disabled={loading || refreshing}>
-              {refreshing ? 'Refreshing…' : 'Refresh inbox'}
-            </Button>
+              aria-label={refreshing ? 'Refreshing inbox' : 'Refresh inbox'} title="Refresh inbox" aria-busy={refreshing}
+              onClick={() => loadSnapshot({ quiet: true })} disabled={loading || refreshing} />
           </div>
         </header>
 
@@ -571,7 +555,6 @@ export default function App() {
                       onClick={() => toggleVisibility(selectedEmail)}>
                       {savingKey === emailVisibilityKeys(selectedEmail)[0] ? 'Saving…' : isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
                     </Button>
-                    <span className="reader-position">{visibleEmails.findIndex(({ index }) => index === selected.index) + 1} / {visibleEmails.length}</span>
                   </div>
                 </div>
                 <header className="reading-header">
