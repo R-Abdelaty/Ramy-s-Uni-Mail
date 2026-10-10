@@ -64,7 +64,7 @@ h1, h2, h3, p { margin: 0; }
 .snapshot-time { color: var(--muted); font-size: 11px; }
 .toolbar-actions .refresh-button { font-size: 12px; }
 .refresh-button svg { color: var(--accent); }
-.mail-workspace { display: grid; flex: 1; min-width: 0; min-height: 0; grid-template-columns: minmax(330px, 40%) minmax(0, 1fr); gap: 10px; }
+.mail-workspace { display: grid; flex: 1; min-width: 0; min-height: 0; grid-template-columns: minmax(330px, 40%) minmax(0, 1fr); gap: 0; }
 .inbox-panel, .reading-panel { min-width: 0; min-height: 0; border: 1px solid #EAF4FC; border-bottom: 0; border-radius: 20px 20px 0 0; background: var(--panel-fill); }
 .inbox-panel { display: flex; flex-direction: column; overflow: hidden; }
 .inbox-header { flex-shrink: 0; padding: 30px 20px 0; }
@@ -197,6 +197,11 @@ h1, h2, h3, p { margin: 0; }
   .message-preview { font-size: 12px; }
   .reading-panel { padding-right: 24px; padding-left: 24px; }
   .reading-date { max-width: 105px; }
+}
+
+@media (min-width: 769px) {
+  .inbox-panel { border-top-right-radius: 0; }
+  .reading-panel { border-top-left-radius: 0; border-left: 0; }
 }
 
 @media (max-width: 768px) {

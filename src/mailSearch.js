@@ -1,4 +1,4 @@
-import { senderName } from './mailPresentation.js'
+import { emailTitle, senderName } from './mailPresentation.js'
 
 const BLOCKS = new Set(['ADDRESS', 'ARTICLE', 'ASIDE', 'BLOCKQUOTE', 'BODY', 'BR', 'DD', 'DIV', 'DL', 'DT', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'HR', 'LI', 'OL', 'P', 'PRE', 'SECTION', 'TABLE', 'TBODY', 'TD', 'TH', 'TR', 'UL'])
 const SKIP = new Set(['HEAD', 'SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE', 'SVG', 'MATH', 'TEXTAREA', 'TITLE'])
@@ -68,7 +68,7 @@ export function findSearchMatches(value, terms) {
 export function buildSearchIndex(emails) {
   return emails.map((email, index) => {
     const body = email.html_body ? readableHtmlText(email.html_body) : compact(typeof email.body === 'string' ? email.body : '')
-    return { email, index, title: email.title || '', sender: senderName(email),
+    return { email, index, title: emailTitle(email), sender: senderName(email),
       recipient: typeof email.to === 'string' ? email.to : '', body,
       snippet: searchSnippet(compact((typeof email.preview === 'string' && email.preview) || body || 'Open to read this message.'), []) }
   })

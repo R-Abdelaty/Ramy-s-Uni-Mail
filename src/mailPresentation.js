@@ -3,6 +3,11 @@ const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline' 
 const FONT_URL = 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&display=swap'
 const MESSAGE_COLORS = ['#895B8A']
 
+export function emailTitle(email) {
+  const title = typeof email.title === 'string' ? email.title : ''
+  return title.replace(/\[EXTERNAL\s+EMAIL\]\s*[-–—]\s*Notification\s+System:\s*/gi, '').trim() || 'Untitled message'
+}
+
 export function senderName(email) {
   for (const value of [email.sender_name, email.sender, email.from]) {
     if (typeof value === 'string' && value.trim()) return value.trim()
@@ -12,7 +17,7 @@ export function senderName(email) {
 
 export function initials(email) {
   const name = senderName(email)
-  const words = (name || email.title || 'Untitled message').trim().split(/\s+/u)
+  const words = (name || emailTitle(email)).trim().split(/\s+/u)
   return words.slice(0, 2).map((word) => Array.from(word)[0]).join('').toLocaleUpperCase()
 }
 

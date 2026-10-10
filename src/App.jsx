@@ -10,7 +10,7 @@ import {
   Mail24Regular,
   Search20Regular,
 } from '@fluentui/react-icons'
-import { emailDocument, initials, language, messageColor, senderName } from './mailPresentation.js'
+import { emailDocument, emailTitle, initials, language, messageColor, senderName } from './mailPresentation.js'
 import { emailVisibilityKeys, isEmailHidden } from './emailVisibility.js'
 import { onAuthStateChanged, signInWithRedirect } from 'firebase/auth'
 import { firebaseSetupError, getFirebaseServices } from './firebaseClient.js'
@@ -541,12 +541,12 @@ export default function App() {
                     <div className={`message-row${index === selected?.index ? ' is-selected' : ''}${isEmailHidden(email, hiddenKeys) ? ' is-hidden' : ''}${searchTerms.length ? ' is-search-result' : ''}`}
                       style={{ '--message-color': messageColor(email) }}>
                       <button type="button" className="message-open" aria-pressed={index === selected?.index}
-                        aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Hidden email: ' : ''}${email.title || 'Untitled message'}`}
+                        aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Hidden email: ' : ''}${emailTitle(email)}`}
                         onClick={() => { setSelectedIndex(index); setReaderOpen(true) }} />
                       <Avatar email={email} />
                       <span className="message-summary">
                         <span className="message-row-top">
-                          <span className="message-subject" dir="auto" lang={language(email.title)}><CourseText value={email.title || 'Untitled message'} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
+                          <span className="message-subject" dir="auto" lang={language(emailTitle(email))}><CourseText value={emailTitle(email)} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} /></span>
                           <span className="message-date" title={formatDate(email.date)}>{formatDate(email.date, true)}</span>
                         </span>
                         <span className="message-preview" dir="auto" lang={language(snippet)}>
@@ -557,7 +557,7 @@ export default function App() {
                     <Button className="visibility-toggle" appearance="subtle" size="small"
                       icon={isEmailHidden(email, hiddenKeys) ? <Eye20Regular /> : <EyeOff20Regular />}
                       title={isEmailHidden(email, hiddenKeys) ? 'Show email' : 'Hide email'}
-                      aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Show' : 'Hide'} email: ${email.title || 'Untitled message'}`}
+                      aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Show' : 'Hide'} email: ${emailTitle(email)}`}
                       aria-pressed={isEmailHidden(email, hiddenKeys)} disabled={visibilityDisabled}
                       onClick={() => toggleVisibility(email)} />
                   </li>
@@ -583,8 +583,8 @@ export default function App() {
                   </div>
                 </div>
                 <header className="reading-header">
-                  <h2 ref={readingTitleRef} tabIndex={-1} className="reading-title" dir="auto" lang={language(selectedEmail.title)}>
-                    <CourseText value={selectedEmail.title || 'Untitled message'} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} />
+                  <h2 ref={readingTitleRef} tabIndex={-1} className="reading-title" dir="auto" lang={language(emailTitle(selectedEmail))}>
+                    <CourseText value={emailTitle(selectedEmail)} mappings={courseMappings} searchTerms={searchTerms} onShow={showCoursePopover} onHide={hideCoursePopover} />
                   </h2>
                   <div className="reading-sender">
                     <Avatar email={selectedEmail} />
@@ -601,7 +601,7 @@ export default function App() {
                 </header>
                 <section className="body-section" aria-label="Full email body" key={`${selectedEmail.date || ''}-${selected.index}`}>
                   {selectedDocument ? (
-                    <iframe className="mail-body-frame" title={selectedEmail.title || 'Email content'}
+                    <iframe className="mail-body-frame" title={emailTitle(selectedEmail)}
                       ref={frameRef} sandbox="allow-same-origin" referrerPolicy="no-referrer" srcDoc={selectedDocument} onLoad={setupCourseFrame} />
                   ) : (
                     <div className="plain-body-scroll">

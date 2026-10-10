@@ -63,3 +63,12 @@ test('long inbox previews stay bounded while the full body remains searchable', 
   assert.ok(entries[0].snippet.length < 160)
   assert.match(searchEmails(entries, parseSearchTerms('official'))[0].snippet, /official announcement/)
 })
+
+test('notification boilerplate does not create invisible title matches and message identity remains intact', () => {
+  const email = Object.freeze({ title: '[EXTERNAL EMAIL] - Notification System: Discrete Math Updates', body: 'Lecture details.' })
+  const entries = buildSearchIndex([email, { title: 'Campus news', body: 'The notification system is being upgraded.' }])
+  assert.equal(entries[0].email, email)
+  assert.deepEqual(searchEmails(entries, parseSearchTerms('notification system')).map(entry => entry.index), [1])
+  assert.deepEqual(searchEmails(entries, parseSearchTerms('discrete math')).map(entry => entry.index), [0])
+  assert.equal(searchEmails(entries, parseSearchTerms('external')).length, 0)
+})
