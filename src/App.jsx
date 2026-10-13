@@ -320,7 +320,6 @@ export default function App() {
       <div className="mail-window">
         <header className="window-toolbar">
           <div className="toolbar-actions">
-            <span className="snapshot-time">Demo inbox · Sample emails</span>
             <Button appearance="subtle" icon={<ArrowSync20Regular />} className="refresh-button"
               aria-label="Reset demo" title="Reset demo" onClick={resetDemo} />
           </div>
