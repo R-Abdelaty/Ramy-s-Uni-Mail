@@ -1,6 +1,6 @@
 // The recording demo uses system fonts and makes no external resource requests.
 const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
-const MESSAGE_COLORS = ['#829BB7']
+const MESSAGE_COLORS = ['#153A75']
 
 export function emailTitle(email) {
   const title = typeof email.title === 'string' ? email.title : ''
@@ -42,11 +42,11 @@ export function emailDocument(email) {
     body{font-size:16px;line-height:1.8;overflow-wrap:anywhere;padding:4px 5px 24px 0}
     :lang(ar){line-height:1.95}
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
-    a{color:#829BB7!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #895B8A;padding-inline-start:16px;margin-inline:0}
+    a{color:#153A75!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #895B8A;padding-inline-start:16px;margin-inline:0}
     .course-code{color:#EAF4FC!important;background:#895B8A!important;border-radius:4px;cursor:help}
-    .search-highlight{color:#EAF4FC!important;background:#895B8A!important;outline:1px solid #829BB7;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;pointer-events:none}
-    .course-code:focus-visible{outline:2px solid #829BB7;outline-offset:2px}
-    ::selection{color:#EAF4FC!important;background:#829BB7!important}
-    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#829BB7;border-radius:6px}
+    .search-highlight{color:#EAF4FC!important;background:#895B8A!important;outline:1px solid #153A75;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;pointer-events:none}
+    .course-code:focus-visible{outline:2px solid #153A75;outline-offset:2px}
+    ::selection{color:#EAF4FC!important;background:#153A75!important}
+    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#153A75;border-radius:6px}
   </style></head><body dir="auto">${email.html_body}</body></html>`
 }
