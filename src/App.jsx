@@ -98,7 +98,7 @@ function Avatar({ email, className = '' }) {
 
 export default function App() {
   const emails = DEMO_EMAILS
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(null)
   const [query, setQuery] = useState('')
   const [readerOpen, setReaderOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -193,7 +193,7 @@ export default function App() {
 
   function resetDemo() {
     setHiddenKeys(new Set())
-    setSelectedIndex(0)
+    setSelectedIndex(null)
     setQuery('')
     setReaderOpen(false)
     setCourseMappings(DEMO_COURSES)
@@ -222,8 +222,9 @@ export default function App() {
   const searchTerms = useMemo(() => parseSearchTerms(query, courseMappings), [query, courseMappings])
   const searchIndex = useMemo(() => buildSearchIndex(emails), [emails])
   const visibleEmails = useMemo(() => searchEmails(searchIndex, searchTerms), [searchIndex, searchTerms])
-  const selected = visibleEmails.find(({ index }) => index === selectedIndex) || visibleEmails[0]
+  const selected = visibleEmails.find(({ index }) => index === selectedIndex)
   const selectedEmail = selected?.email
+  const hasNoSearchResults = Boolean(query.trim()) && visibleEmails.length === 0
   const selectedDocument = useMemo(() => selectedEmail?.html_body ? emailDocument(selectedEmail) : '', [selectedEmail])
 
   useEffect(() => {
@@ -387,7 +388,7 @@ export default function App() {
             )}
           </aside>
 
-          <article className="reading-panel" aria-label="Selected message">
+          <article className="reading-panel" aria-label="Message reader">
             {loading ? (
               <div className="reader-placeholder" role="status"><Spinner label="Loading message" /></div>
             ) : selectedEmail ? (
@@ -434,8 +435,8 @@ export default function App() {
             ) : (
               <div className="reader-placeholder empty-reader">
                 <span className="empty-mail-icon" aria-hidden="true"><Mail24Regular /></span>
-                <h2>{query.trim() ? 'No matching messages' : 'Choose a message'}</h2>
-                <p>{query.trim() ? 'Clear your search to return to the inbox.' : 'Select an email from the inbox to read it here.'}</p>
+                <h2>{hasNoSearchResults ? 'No matching messages' : query.trim() ? 'Choose a message' : 'Welcome to your inbox'}</h2>
+                <p>{hasNoSearchResults ? 'Clear your search to return to the inbox.' : query.trim() ? 'Select a search result to read it here.' : 'Select an email on the left to start reading.'}</p>
               </div>
             )}
           </article>
