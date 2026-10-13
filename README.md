@@ -1,28 +1,26 @@
-# GUC Mail Viewer
+# RAMYS UNI MAIL — LinkedIn recording demo
 
-A React and Vite viewer for a personal email archive stored in Cloud Firestore. Google sign-in identifies the visitor; published Firestore security rules decide who can read messages. The source can be public while the inbox stays private.
-
-## Features
-
-- Search and read archived messages, with a refresh button for new imports.
-- Display email HTML in a sandboxed frame that blocks scripts and external email resources.
-- Save hide/show preferences in one shared Firestore document, so they stay the same across both approved Google accounts, devices, and sessions. Existing browser-local preferences are migrated on the next sign-in.
-- Open the shared course-code table with the desktop book button. Its floating panel keeps the mail layout centered. Saved names sync through `userPreferences/shared` and appear when hovering, focusing, or tapping a highlighted code in the inbox or a message. The editor is hidden on mobile, where saved popovers remain available.
+This branch, `linkedin-post-design`, is a local recording copy of the project. It opens directly into a fictional university inbox after a one-second loading screen. No Google sign-in, Firebase configuration, Firestore access, or real email data is used by the demo.
 
 ## Run locally
 
-1. Run `npm ci` in this folder.
-2. Copy `.env.example` to `.env.local` and fill all four `VITE_FIREBASE_*` values from your Firebase web app configuration. `VITE_FIRESTORE_EMAIL_COLLECTION` defaults to `emails`.
-3. Enable Google sign-in in Firebase Authentication and authorize `localhost` for local development.
-4. Publish the rules in `firestore.rules` from Firebase Console. They allow the listed verified accounts to read email documents, deny browser writes to email documents, and let those accounts read/write the shared `userPreferences/shared` document.
-5. Run `npm run dev`.
+1. Run `npm ci` if dependencies are not installed.
+2. Run `npm run dev` and open the local URL printed by Vite.
 
-The app expects documents in the `emails` collection with a `title`, `date`, and either `body` or `html_body`. A separate private retrieval process imports messages into Firestore; its credentials and email data are not part of this viewer repository.
+No `.env.local` is needed. Existing Firebase environment settings are ignored by the demo entry point. For a production-style recording, run `npm run build` followed by `npm run preview`.
 
-## Deploy with Cloudflare Pages
+## What to demonstrate
 
-Connect this viewer repository to Cloudflare Pages. Use `npm run build` as the build command and `dist` as the output directory. Set all four `VITE_FIREBASE_*` build variables using your Firebase web app configuration, then add the Pages domain to Firebase Authentication's authorized domains. Confirm that the published Firestore rules allow only your intended accounts to read the archive.
+- Hover, focus, or click a pink course code in a subject, preview, or message body to reveal its course name.
+- Search for a course code such as “CSEN 501” or a keyword such as “quiz”. Matching terms are highlighted in the results and reader.
+- Use an eye button to collapse a message, then show it again.
+- Open the book button on desktop to edit course names. Save applies the changes immediately in this browser session.
+- Open the Arabic library announcement to show right-to-left message support.
 
-Firebase web configuration is included in the browser bundle and is not an access-control secret. Never put a service-account key, mailbox password, or email export in this project or a `VITE_` variable. Public visitors can view the app shell, but they cannot read the private archive unless Firestore rules allow their account.
+The top-right reset button restores all eight sample messages, original course names, and the initial selection, and clears the search. Reloading the page also resets the demo and replays the one-second startup. No changes are persisted to browser storage or any server.
 
-Run `npm test` for the viewer checks and `npm run build` to verify the production bundle. Inspect `dist` before deployment to ensure it contains no email export.
+## Recording data and privacy
+
+All messages in `src/demoData.js` were written as fictional examples. Sender and recipient addresses use `university.example`. The demo reuses the original UI and client-side search, course annotation, and visibility behavior. Its entry point does not import any Firebase modules. The original Firebase helper files remain in the repository for reference; they are not included in the demo bundle. System fonts avoid external font requests during recording.
+
+Run `npm test` and `npm run build` to verify the project. The private application remains on `main`.

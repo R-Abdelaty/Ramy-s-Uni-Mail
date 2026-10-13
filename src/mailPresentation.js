@@ -1,6 +1,5 @@
-// Only the requested font providers can load remotely; email resources stay blocked.
-const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src data: https://fonts.gstatic.com; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
-const FONT_URL = 'https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,400;0,700;1,400;1,700&family=Cairo:wght@200..1000&display=swap'
+// The recording demo uses system fonts and makes no external resource requests.
+const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
 const MESSAGE_COLORS = ['#895B8A']
 
 export function emailTitle(email) {
@@ -36,12 +35,12 @@ export function language(value = '') {
 }
 
 export function emailDocument(email) {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${EMAIL_CSP}"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="stylesheet" href="${FONT_URL}"><style>
-    :root{color-scheme:light;font-family:"Lato","Cairo",sans-serif;color:#36363B;background:transparent}
-    *{box-sizing:border-box;font-family:"Lato","Cairo",sans-serif!important;color:inherit!important;background-color:transparent!important}
+  return `<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="${EMAIL_CSP}"><meta name="referrer" content="no-referrer"><meta name="viewport" content="width=device-width, initial-scale=1"><style>
+    :root{color-scheme:light;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important;color:#36363B;background:transparent}
+    *{box-sizing:border-box;font-family:inherit!important;color:inherit!important;background-color:transparent!important}
     html,body{margin:0;padding:0;color:#36363B!important;background:transparent!important}
     body{font-size:16px;line-height:1.8;overflow-wrap:anywhere;padding:4px 5px 24px 0}
-    :lang(ar){font-family:"Cairo","Lato",sans-serif!important;line-height:1.95}
+    :lang(ar){line-height:1.95}
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
     a{color:#895B8A!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #F09199;padding-inline-start:16px;margin-inline:0}
     .course-code{color:#36363B!important;background:#F09199!important;border-radius:4px;cursor:help}

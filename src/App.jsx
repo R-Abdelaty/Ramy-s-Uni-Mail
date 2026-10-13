@@ -12,12 +12,8 @@ import {
 } from '@fluentui/react-icons'
 import { emailDocument, emailTitle, initials, language, messageColor, senderName } from './mailPresentation.js'
 import { emailVisibilityKeys, isEmailHidden } from './emailVisibility.js'
-import { onAuthStateChanged, signInWithRedirect } from 'firebase/auth'
-import { firebaseSetupError, getFirebaseServices } from './firebaseClient.js'
-import { loadEmailArchive } from './firebaseEmails.js'
-import { loadFirestoreVisibility, updateFirestoreVisibility } from './firestoreVisibility.js'
 import { matchCourses, validateCourseRows } from './courseMappings.js'
-import { saveCourses, subscribeCourses } from './firestoreCourses.js'
+import { DEMO_EMAILS, DEMO_COURSES, DEMO_BOOT_MS } from './demoData.js'
 import { annotateCourseDocument } from './annotateCourses.js'
 import courseBookIcon from './assets/course-book.svg'
 import { buildSearchIndex, searchEmails, parseSearchTerms, highlightSearchDocument } from './mailSearch.js'
@@ -101,38 +97,21 @@ function Avatar({ email, className = '' }) {
 }
 
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [authLoading, setAuthLoading] = useState(true)
-  const [authError, setAuthError] = useState(firebaseSetupError)
-  const [authBusy, setAuthBusy] = useState(false)
-  const [emails, setEmails] = useState([])
-  const [savedAt, setSavedAt] = useState('')
+  const emails = DEMO_EMAILS
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [query, setQuery] = useState('')
   const [readerOpen, setReaderOpen] = useState(false)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
-  const [error, setError] = useState('')
   const [hiddenKeys, setHiddenKeys] = useState(() => new Set())
-  const [visibilityReady, setVisibilityReady] = useState(false)
-  const [visibilityLoading, setVisibilityLoading] = useState(true)
-  const [visibilityError, setVisibilityError] = useState('')
-  const [savingKey, setSavingKey] = useState('')
   const [visibilityStatus, setVisibilityStatus] = useState('')
-  const [courseMappings, setCourseMappings] = useState({})
-  const [courseRows, setCourseRows] = useState([])
-  const [courseRevision, setCourseRevision] = useState(0)
-  const [courseDraftRevision, setCourseDraftRevision] = useState(0)
-  const [coursesLoading, setCoursesLoading] = useState(true)
-  const [coursesSaving, setCoursesSaving] = useState(false)
+  const [courseMappings, setCourseMappings] = useState(DEMO_COURSES)
+  const [courseRows, setCourseRows] = useState(() => Object.entries(DEMO_COURSES).map(([code, name]) => ({ id: crypto.randomUUID(), code, name })))
   const [coursesDirty, setCoursesDirty] = useState(false)
   const [coursesError, setCoursesError] = useState('')
-  const [coursesConflict, setCoursesConflict] = useState(false)
   const [coursesStatus, setCoursesStatus] = useState('')
   const [coursePopover, setCoursePopover] = useState(null)
   const [coursesOpen, setCoursesOpen] = useState(false)
   const coursesButtonRef = useRef(null)
-  const courseDraftDirtyRef = useRef(false)
   const frameRef = useRef(null)
   const frameCleanupRef = useRef(null)
   const readingTitleRef = useRef(null)
@@ -156,70 +135,32 @@ export default function App() {
   }, [coursesOpen, closeCourses])
 
   useEffect(() => {
-    if (!user) {
-      setCourseMappings({})
-      setCourseRows([])
-      setCoursePopover(null)
-      setCoursesOpen(false)
-      setCoursesLoading(false)
-      courseDraftDirtyRef.current = false
-      return undefined
-    }
-    setCoursesLoading(true)
-    setCoursesError('')
-    const unsubscribe = subscribeCourses(getFirebaseServices().db, (mappings, revision) => {
-      setCourseMappings(mappings)
-      setCourseRevision(revision)
-      if (!courseDraftDirtyRef.current) {
-        setCourseRows(rowsFromMappings(mappings))
-        setCourseDraftRevision(revision)
-      }
-      setCoursesLoading(false)
-    }, (loadError) => {
-      setCoursesError(loadError instanceof Error ? loadError.message : 'Course names could not be loaded.')
-      setCoursesLoading(false)
-    })
-    return () => unsubscribe()
-  }, [user, rowsFromMappings])
+    const timer = window.setTimeout(() => setLoading(false), DEMO_BOOT_MS)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   function editCourseRows(rows) {
     setCourseRows(rows)
     setCoursesDirty(true)
-    courseDraftDirtyRef.current = true
     setCoursesError('')
     setCoursesStatus('Unsaved changes')
   }
 
   function resetCourseRows() {
     setCourseRows(rowsFromMappings(courseMappings))
-    setCourseDraftRevision(courseRevision)
     setCoursesDirty(false)
-    courseDraftDirtyRef.current = false
     setCoursesError('')
-    setCoursesConflict(false)
     setCoursesStatus('')
   }
 
-  async function saveCourseRows() {
+  function saveCourseRows() {
     setCoursesError('')
-    setCoursesConflict(false)
     let mappings
     try { mappings = validateCourseRows(courseRows) } catch (error) { setCoursesError(error.message); return }
-    setCoursesSaving(true)
-    setCoursesStatus('Saving courses…')
-    try {
-      const revision = await saveCourses(getFirebaseServices().db, mappings, courseDraftRevision)
-      courseDraftDirtyRef.current = false
-      setCoursesDirty(false)
-      setCourseRows(rowsFromMappings(mappings))
-      setCourseDraftRevision(revision)
-      setCourseMappings(mappings)
-      setCoursesStatus('Courses saved across devices.')
-    } catch (saveError) {
-      setCoursesError(saveError instanceof Error ? saveError.message : 'Courses could not be saved.')
-      setCoursesConflict(saveError?.code === 'course-conflict')
-      setCoursesStatus('')
-    } finally { setCoursesSaving(false) }
+    setCoursesDirty(false)
+    setCourseRows(rowsFromMappings(mappings))
+    setCourseMappings(mappings)
+    setCoursesStatus('Course names saved for this demo session.')
   }
 
   const hideCoursePopover = useCallback(() => setCoursePopover(null), [])
@@ -250,109 +191,33 @@ export default function App() {
     }
   }, [coursePopover, hideCoursePopover])
 
-  useEffect(() => {
-    if (firebaseSetupError) {
-      setAuthLoading(false)
-      return undefined
-    }
-    try {
-      const { auth } = getFirebaseServices()
-      return onAuthStateChanged(auth, (signedInUser) => {
-        setUser(signedInUser)
-        setAuthError('')
-        setAuthLoading(false)
-      }, (error) => {
-        setAuthError(error.message || 'Could not check your Google sign-in.')
-        setAuthLoading(false)
-      })
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Firebase setup is incomplete.')
-      setAuthLoading(false)
-      return undefined
-    }
-  }, [])
-
-  async function handleGoogleSignIn() {
-    setAuthBusy(true)
-    setAuthError('')
-    try {
-      const { auth, provider } = getFirebaseServices()
-      await signInWithRedirect(auth, provider)
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Google sign-in failed.')
-    } finally {
-      setAuthBusy(false)
-    }
+  function resetDemo() {
+    setHiddenKeys(new Set())
+    setSelectedIndex(0)
+    setQuery('')
+    setReaderOpen(false)
+    setCourseMappings(DEMO_COURSES)
+    setCourseRows(rowsFromMappings(DEMO_COURSES))
+    setCoursesDirty(false)
+    setCoursesError('')
+    setCoursesStatus('')
+    setCoursesOpen(false)
+    hideCoursePopover()
+    setVisibilityStatus('Demo reset. All sample messages are visible.')
   }
 
-  const loadSnapshot = useCallback(async ({ quiet = false } = {}) => {
-    if (!user) {
-      setEmails([])
-      setLoading(false)
-      return
-    }
-    if (quiet) setRefreshing(true)
-    else setLoading(true)
-    setError('')
-    try {
-      const snapshot = await loadEmailArchive(getFirebaseServices().db)
-      setEmails(snapshot.emails)
-      setSavedAt(typeof snapshot.saved_at === 'string' ? snapshot.saved_at : '')
-      setSelectedIndex((current) => snapshot.emails.length ? Math.min(current, snapshot.emails.length - 1) : 0)
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : 'The Firestore archive could not be loaded.')
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
-    }
-  }, [user])
-
-  useEffect(() => { loadSnapshot() }, [loadSnapshot])
-
-  const loadVisibility = useCallback(async () => {
-    setVisibilityLoading(true)
-    setVisibilityReady(false)
-    setVisibilityError('')
-    try {
-      if (!user) {
-        setHiddenKeys(new Set())
-        setVisibilityReady(false)
-        return
-      }
-      setHiddenKeys(await loadFirestoreVisibility(getFirebaseServices().db, user.uid, localStorage))
-      setVisibilityReady(true)
-    } catch (loadError) {
-      setVisibilityError(loadError instanceof Error ? loadError.message : 'Saved email visibility could not be loaded.')
-    } finally {
-      setVisibilityLoading(false)
-    }
-  }, [user])
-
-  useEffect(() => { loadVisibility() }, [loadVisibility])
-
-  async function toggleVisibility(email) {
-    const emailKeys = emailVisibilityKeys(email)
+  function toggleVisibility(email) {
     const hidden = !isEmailHidden(email, hiddenKeys)
-    setSavingKey(emailKeys[0])
-    setVisibilityError('')
-    setVisibilityStatus('Saving email visibility…')
-    try {
-      if (!user) throw new Error('Sign in to save email visibility.')
-      const updated = new Set(hiddenKeys)
-      if (hidden) emailKeys.forEach((key) => updated.add(key))
-      else emailKeys.forEach((key) => updated.delete(key))
-      await updateFirestoreVisibility(getFirebaseServices().db, emailKeys, hidden)
-      setHiddenKeys(updated)
-      setVisibilityStatus(hidden ? 'Email hidden and saved.' : 'Email shown and saved.')
-    } catch (saveError) {
-      setVisibilityError(saveError instanceof Error ? saveError.message : 'Email visibility could not be saved.')
-      setVisibilityStatus('Email visibility was not changed.')
-    } finally {
-      setSavingKey('')
-    }
+    setHiddenKeys((current) => {
+      const updated = new Set(current)
+      for (const key of emailVisibilityKeys(email)) {
+        if (hidden) updated.add(key)
+        else updated.delete(key)
+      }
+      return updated
+    })
+    setVisibilityStatus(hidden ? 'Email hidden.' : 'Email shown.')
   }
-
-  const visibilityDisabled = !user || !visibilityReady || visibilityLoading || Boolean(savingKey)
 
   const searchTerms = useMemo(() => parseSearchTerms(query, courseMappings), [query, courseMappings])
   const searchIndex = useMemo(() => buildSearchIndex(emails), [emails])
@@ -447,20 +312,7 @@ export default function App() {
     })
   }
 
-  if (authLoading) return <main className="sign-in-screen"><Spinner label="Checking sign-in" /></main>
-  if (!user) return (
-    <main className="sign-in-screen">
-      <section className="sign-in-card">
-        <h1 className="brand-title" aria-label="RAMYS UNI MAIL"><strong>RAMYS</strong> <span>UNI MAIL</span></h1>
-        <p>Sign in with your Google account to read your private email archive.</p>
-        {authError && <p className="sign-in-error" role="alert">{authError}</p>}
-        <Button appearance="primary" onClick={handleGoogleSignIn} disabled={authBusy || Boolean(firebaseSetupError)}>
-          {authBusy ? 'Signing in…' : 'Continue with Google'}
-        </Button>
-        {firebaseSetupError && <p className="setup-help">Set the Firebase web app settings in <code>.env.local</code> or the hosting build environment, then rebuild.</p>}
-      </section>
-    </main>
-  )
+  if (loading) return <main className="sign-in-screen"><Spinner label="Loading inbox" /></main>
 
   return (
     <main className="page-shell">
@@ -468,29 +320,13 @@ export default function App() {
       <div className="mail-window">
         <header className="window-toolbar">
           <div className="toolbar-actions">
-            <span className="snapshot-time" title={savedAt ? formatDate(savedAt) : undefined}>
-              {savedAt ? `Updated ${formatDate(savedAt)}` : 'Not updated yet'}
-            </span>
+            <span className="snapshot-time">Demo inbox · Sample emails</span>
             <Button appearance="subtle" icon={<ArrowSync20Regular />} className="refresh-button"
-              aria-label={refreshing ? 'Refreshing inbox' : 'Refresh inbox'} title="Refresh inbox" aria-busy={refreshing}
-              onClick={() => loadSnapshot({ quiet: true })} disabled={loading || refreshing} />
+              aria-label="Reset demo" title="Reset demo" onClick={resetDemo} />
           </div>
         </header>
 
-        {error && emails.length > 0 && (
-          <div className="inline-error" role="status">
-            <span>{error} Showing the last loaded messages.</span>
-            <Button appearance="subtle" onClick={() => loadSnapshot({ quiet: true })} disabled={refreshing}>Try again</Button>
-          </div>
-        )}
-
         <span className="sr-only" role="status">{visibilityStatus}</span>
-        {visibilityError && (
-          <div className="inline-error" role="alert">
-            <span>{visibilityError}</span>
-            <Button appearance="subtle" onClick={loadVisibility} disabled={visibilityLoading || Boolean(savingKey)}>Try again</Button>
-          </div>
-        )}
 
         <section className={`mail-workspace${readerOpen ? ' reader-is-open' : ''}`} aria-label="Inbox and message reader">
           <aside className="inbox-panel" ref={inboxRef} aria-label="Inbox">
@@ -513,20 +349,6 @@ export default function App() {
 
             {loading ? (
               <div className="state-panel compact-state" role="status"><Spinner size="small" label="Loading inbox" /></div>
-            ) : error && emails.length === 0 ? (
-              <div className="state-panel">
-                <span className="state-icon" aria-hidden="true"><Mail24Regular /></span>
-                <h3>Firestore archive unavailable</h3>
-                <p>{error}</p>
-                <p>Check the Firestore rules for your signed-in account, then try again.</p>
-                <Button appearance="secondary" onClick={() => loadSnapshot({ quiet: true })} disabled={refreshing}>Try again</Button>
-              </div>
-            ) : emails.length === 0 ? (
-              <div className="state-panel">
-                <span className="state-icon" aria-hidden="true"><Mail24Regular /></span>
-                <h3>Your inbox is empty</h3>
-                <p>No messages were found in the Firestore archive.</p>
-              </div>
             ) : visibleEmails.length === 0 ? (
               <div className="state-panel">
                 <span className="state-icon" aria-hidden="true"><Search20Regular /></span>
@@ -558,7 +380,7 @@ export default function App() {
                       icon={isEmailHidden(email, hiddenKeys) ? <Eye20Regular /> : <EyeOff20Regular />}
                       title={isEmailHidden(email, hiddenKeys) ? 'Show email' : 'Hide email'}
                       aria-label={`${isEmailHidden(email, hiddenKeys) ? 'Show' : 'Hide'} email: ${emailTitle(email)}`}
-                      aria-pressed={isEmailHidden(email, hiddenKeys)} disabled={visibilityDisabled}
+                      aria-pressed={isEmailHidden(email, hiddenKeys)}
                       onClick={() => toggleVisibility(email)} />
                   </li>
                 ))}
@@ -576,9 +398,9 @@ export default function App() {
                   <div className="reader-message-actions">
                     <Button appearance="subtle" size="small" className="reader-visibility-toggle"
                       icon={isEmailHidden(selectedEmail, hiddenKeys) ? <Eye20Regular /> : <EyeOff20Regular />}
-                      aria-label={savingKey === emailVisibilityKeys(selectedEmail)[0] ? 'Saving…' : isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
+                      aria-label={isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
                       title={isEmailHidden(selectedEmail, hiddenKeys) ? 'Show email' : 'Hide email'}
-                      aria-pressed={isEmailHidden(selectedEmail, hiddenKeys)} disabled={visibilityDisabled}
+                      aria-pressed={isEmailHidden(selectedEmail, hiddenKeys)}
                       onClick={() => toggleVisibility(selectedEmail)} />
                   </div>
                 </div>
@@ -628,7 +450,7 @@ export default function App() {
       </button>
       {coursesOpen && <div className="courses-overlay" onClick={closeCourses}>
         <CourseTable rows={courseRows} onRows={editCourseRows} onSave={saveCourseRows} onCancel={resetCourseRows} onReload={resetCourseRows} onClose={closeCourses}
-          loading={coursesLoading} saving={coursesSaving} dirty={coursesDirty} error={coursesError} conflict={coursesConflict} status={coursesStatus} />
+          loading={false} saving={false} dirty={coursesDirty} error={coursesError} conflict={false} status={coursesStatus} />
       </div>}
       {coursePopover && courseMappings[coursePopover.code] && createPortal(<div className="course-popover" role="tooltip" style={{
         left: Math.max(8, Math.min(window.innerWidth - Math.min(280, window.innerWidth - 16) - 8, (coursePopover.rect.left + coursePopover.rect.right) / 2 - 140)),
