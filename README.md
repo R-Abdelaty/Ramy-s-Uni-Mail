@@ -11,7 +11,7 @@ No `.env.local` is needed. Existing Firebase environment settings are ignored by
 
 ## What to demonstrate
 
-- Hover, focus, or click a pink course code in a subject, preview, or message body to reveal its course name.
+- Hover, focus, or click a purple course code in a subject, preview, or message body to reveal its course name.
 - Search for a course code such as “CSEN 501” or a keyword such as “quiz”. Matching terms are highlighted in the results and reader.
 - Use an eye button to collapse a message, then show it again.
 - Open the book button on desktop to edit course names. Save applies the changes immediately in this browser session.

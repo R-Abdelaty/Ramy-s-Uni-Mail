@@ -1,6 +1,6 @@
 // The recording demo uses system fonts and makes no external resource requests.
 const EMAIL_CSP = "default-src 'none'; img-src data:; style-src 'unsafe-inline'; font-src data:; base-uri 'none'; form-action 'none'; frame-src 'none'; object-src 'none'"
-const MESSAGE_COLORS = ['#895B8A']
+const MESSAGE_COLORS = ['#1E50A2']
 
 export function emailTitle(email) {
   const title = typeof email.title === 'string' ? email.title : ''
@@ -42,11 +42,11 @@ export function emailDocument(email) {
     body{font-size:16px;line-height:1.8;overflow-wrap:anywhere;padding:4px 5px 24px 0}
     :lang(ar){line-height:1.95}
     p{margin:0 0 1.35em}img{max-width:100%;height:auto}table{max-width:100%!important}pre{white-space:pre-wrap;overflow-wrap:anywhere}
-    a{color:#895B8A!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #F09199;padding-inline-start:16px;margin-inline:0}
-    .course-code{color:#36363B!important;background:#F09199!important;border-radius:4px;cursor:help}
-    .search-highlight{color:#36363B!important;background:#F09199!important;outline:1px solid #895B8A;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;pointer-events:none}
-    .course-code:focus-visible{outline:2px solid #895B8A;outline-offset:2px}
-    ::selection{color:#EAF4FC!important;background:#895B8A!important}
-    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#895B8A;border-radius:6px}
+    a{color:#1E50A2!important;text-decoration:underline;text-underline-offset:3px}blockquote{border-inline-start:2px solid #895B8A;padding-inline-start:16px;margin-inline:0}
+    .course-code{color:#EAF4FC!important;background:#895B8A!important;border-radius:4px;cursor:help}
+    .search-highlight{color:#EAF4FC!important;background:#895B8A!important;outline:1px solid #1E50A2;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;pointer-events:none}
+    .course-code:focus-visible{outline:2px solid #1E50A2;outline-offset:2px}
+    ::selection{color:#EAF4FC!important;background:#1E50A2!important}
+    ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:#1E50A2;border-radius:6px}
   </style></head><body dir="auto">${email.html_body}</body></html>`
 }
