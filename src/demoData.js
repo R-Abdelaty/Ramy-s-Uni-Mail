@@ -3,7 +3,8 @@ import { DEFAULT_COURSES } from './courseMappings.js'
 export const DEMO_BOOT_MS = 1000
 export const DEMO_COURSES = DEFAULT_COURSES
 
-// Entirely fictional messages. Never load a mailbox, export, or database here.
+// Local samples, including two announcements recreated from supplied screenshots.
+// Sender and recipient addresses are fictional; never load a mailbox or database.
 export const DEMO_EMAILS = [
   {
     id: 'demo-database-project',
@@ -22,6 +23,40 @@ export const DEMO_EMAILS = [
       <p>We will review joins and normalization in the next lab. Bring your draft schema and any questions from the practice sheet.</p>
       <p>If you are also taking <strong>MATH501</strong>, the work on sets and relations will be useful for this milestone.</p>
       <p>Good luck!<br>Database Course Team</p>`,
+  },
+  {
+    id: 'demo-open-jam-session',
+    title: 'TODAY: Semester Kick-Off Open Jam Session',
+    date: '2026-10-12T13:28:00+03:00',
+    sender_name: 'Student Activities Office',
+    from: 'activities@university.example',
+    to: 'student@university.example',
+    html_body: `<div style="text-align:center">
+      <p>Music has a way of bringing people together and what better way to kick off the semester than with an <strong>Open Jam Session!</strong><br>
+      Come meet new people, jam together, connect, exchange ideas and get inspired by fellow music lovers.<br>
+      Whether you sing, play an instrument, or simply enjoy being surrounded by good music, you’re welcome to join.<br>
+      And if you’re not an active musician? <strong>Just come by, hang out and enjoy some tunes! 🎵</strong></p>
+      <p><strong>🗓️ TODAY: Monday, 12<sup>th</sup> October<br>
+      ⏰ 3:30–5:30 PM<br>
+      📍 Music Hall- D5.01</strong><br>
+      Bring your instrument, your voice, or simply yourself. See you there!</p>
+    </div>`,
+  },
+  {
+    id: 'demo-german-tutorials',
+    title: 'Winter 2026: Start of German Tutorials (German 1)',
+    date: '2026-10-07T17:47:00+03:00',
+    sender_name: 'German Centre',
+    from: 'german-centre@university.example',
+    to: 'student@university.example',
+    html_body: `<p>Dear Valued GUC Students,</p>
+      <p>The German Centre is extending you its heartfelt wishes for a successful semester start.</p>
+      <p>Kindly be informed that the <strong>German 1 tutorials</strong> will start on Saturday <strong>10<sup>th</sup> of October 2026.</strong></p>
+      <p>Kindly find below some important information regarding the German Language Tutorials:</p>
+      <p><strong><u>I Course Material</u></strong></p>
+      <p>Kindly note, that <u>Only Original Books</u> are allowed on Campus/in Classes.</p>
+      <p>Original German Language Course book are available <u>only at the GUC Copy Center</u></p>
+      <p><em>Books from other sources are not originals and you will have to bear the legal and financial consequences if you obtain false copies</em></p>`,
   },
   {
     id: 'demo-networks-quiz',

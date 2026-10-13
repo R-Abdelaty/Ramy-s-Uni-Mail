@@ -1,6 +1,6 @@
 # RAMYS UNI MAIL — LinkedIn recording demo
 
-This branch, `linkedin-post-design`, is a local recording copy of the project. It opens directly into a fictional university inbox after a one-second loading screen. No Google sign-in, Firebase configuration, Firestore access, or real email data is used by the demo.
+This branch, `linkedin-post-design`, is a local recording copy of the project. It opens directly into a sample university inbox after a one-second loading screen. No Google sign-in, Firebase configuration, Firestore access, or mailbox access is used by the demo.
 
 ## Run locally
 
@@ -17,10 +17,10 @@ No `.env.local` is needed. Existing Firebase environment settings are ignored by
 - Open the book button on desktop to edit course names. Save applies the changes immediately in this browser session.
 - Open the Arabic library announcement to show right-to-left message support.
 
-The top-right reset button restores all eight sample messages, original course names, and the initial selection, and clears the search. Reloading the page also resets the demo and replays the one-second startup. No changes are persisted to browser storage or any server.
+The top-right reset button restores all ten sample messages, original course names, and the initial selection, and clears the search. Reloading the page also resets the demo and replays the one-second startup. No changes are persisted to browser storage or any server.
 
 ## Recording data and privacy
 
-All messages in `src/demoData.js` were written as fictional examples. Sender and recipient addresses use `university.example`. The demo reuses the original UI and client-side search, course annotation, and visibility behavior. Its entry point does not import any Firebase modules. The original Firebase helper files remain in the repository for reference; they are not included in the demo bundle. System fonts avoid external font requests during recording.
+The inbox in `src/demoData.js` contains eight fictional emails and two university announcements recreated from user-supplied screenshots, pinned in positions 2 and 3. Only the visible announcement text is included; sender identities and recipient addresses are demo placeholders. Sender and recipient addresses use `university.example`. The demo reuses the original UI and client-side search, course annotation, and visibility behavior. Its entry point does not import any Firebase modules. The original Firebase helper files remain in the repository for reference; they are not included in the demo bundle. System fonts avoid external font requests during recording.
 
 Run `npm test` and `npm run build` to verify the project. The private application remains on `main`.
