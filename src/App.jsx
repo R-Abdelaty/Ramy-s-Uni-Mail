@@ -107,7 +107,7 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false)
   const [emails, setEmails] = useState([])
   const [savedAt, setSavedAt] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [selectedIndex, setSelectedIndex] = useState(null)
   const [query, setQuery] = useState('')
   const [readerOpen, setReaderOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -258,6 +258,8 @@ export default function App() {
     try {
       const { auth } = getFirebaseServices()
       return onAuthStateChanged(auth, (signedInUser) => {
+        setSelectedIndex(null)
+        setReaderOpen(false)
         setUser(signedInUser)
         setAuthError('')
         setAuthLoading(false)
@@ -298,7 +300,10 @@ export default function App() {
       const snapshot = await loadEmailArchive(getFirebaseServices().db)
       setEmails(snapshot.emails)
       setSavedAt(typeof snapshot.saved_at === 'string' ? snapshot.saved_at : '')
-      setSelectedIndex((current) => snapshot.emails.length ? Math.min(current, snapshot.emails.length - 1) : 0)
+      setSelectedIndex((current) => {
+        if (current === null || !snapshot.emails.length) return null
+        return Math.min(current, snapshot.emails.length - 1)
+      })
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'The Firestore archive could not be loaded.')
     } finally {
@@ -357,8 +362,9 @@ export default function App() {
   const searchTerms = useMemo(() => parseSearchTerms(query, courseMappings), [query, courseMappings])
   const searchIndex = useMemo(() => buildSearchIndex(emails), [emails])
   const visibleEmails = useMemo(() => searchEmails(searchIndex, searchTerms), [searchIndex, searchTerms])
-  const selected = visibleEmails.find(({ index }) => index === selectedIndex) || visibleEmails[0]
+  const selected = visibleEmails.find(({ index }) => index === selectedIndex)
   const selectedEmail = selected?.email
+  const hasNoSearchResults = Boolean(query.trim()) && visibleEmails.length === 0
   const selectedDocument = useMemo(() => selectedEmail?.html_body ? emailDocument(selectedEmail) : '', [selectedEmail])
 
   useEffect(() => {
@@ -566,7 +572,7 @@ export default function App() {
             )}
           </aside>
 
-          <article className="reading-panel" aria-label="Selected message">
+          <article className="reading-panel" aria-label="Message reader">
             {loading ? (
               <div className="reader-placeholder" role="status"><Spinner label="Loading message" /></div>
             ) : selectedEmail ? (
@@ -613,8 +619,8 @@ export default function App() {
             ) : (
               <div className="reader-placeholder empty-reader">
                 <span className="empty-mail-icon" aria-hidden="true"><Mail24Regular /></span>
-                <h2>{query.trim() ? 'No matching messages' : 'Choose a message'}</h2>
-                <p>{query.trim() ? 'Clear your search to return to the inbox.' : 'Select an email from the inbox to read it here.'}</p>
+                <h2>{hasNoSearchResults ? 'No matching messages' : query.trim() ? 'Choose a message' : 'Welcome to your inbox'}</h2>
+                <p>{hasNoSearchResults ? 'Clear your search to return to the inbox.' : query.trim() ? 'Select a search result to read it here.' : 'Select an email on the left to start reading.'}</p>
               </div>
             )}
           </article>
