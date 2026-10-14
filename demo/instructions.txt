@@ -1,0 +1,7 @@
+(0:00:06 - 0:00:08) zooming in on cursor hovering over CSEN501 subject name, add the text Subject Code Translation
+
+(0:00:13 - 0:00:18) zooming in on the two emails that get hidden in the left, add the text panel Hide unwanted mail
+
+(0:00:24 - 0:00:29) zooming in on the search bar and the search term that comes under it 
+
+use Roboto for the font
